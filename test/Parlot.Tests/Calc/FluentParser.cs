@@ -23,7 +23,7 @@ namespace Parlot.Tests.Calc
             var expression = Deferred<Expression>();
 
             var number = Terms.Decimal()
-                .Then<Expression>(static d => new Number(d))
+                .Then<Expression>(static d => new Number(d), (sb, e, parser) => e is Number n ? parser.Serialize(sb, n.Value) : false)
                 ;
 
             var divided = Terms.Char('/');
@@ -43,7 +43,7 @@ namespace Parlot.Tests.Calc
             // ( "-" ) unary | primary;
             var unary = Recursive<Expression>((u) =>
                 minus.And(u)
-                    .Then<Expression>(static x => new NegateExpression(x.Item2))
+                    .Then<Expression>(static x => new NegateExpression(x.Item2), static (sb, x, parser) => x is NegateExpression n ? parser.Serialize(sb, new('-', n.Inner)) : false)
                     .Or(primary));
 
             // factor => unary ( ( "/" | "*" ) unary )* ;
@@ -65,6 +65,24 @@ namespace Parlot.Tests.Calc
                     }
 
                     return result;
+                }, static (sb, op, parser) =>
+                {
+                    var revertBack = new System.Collections.Generic.List<(char, Expression)>();
+                    var exp = op;
+                    while (exp is Division || exp is Multiplication)
+                    {
+                        if (exp is Division a)
+                        {
+                            revertBack.Add(new('/', a.Right));
+                            exp = a.Left;
+                        }
+                        if (exp is Multiplication s)
+                        {
+                            revertBack.Add(new('*', s.Right));
+                            exp = s.Left;
+                        }
+                    }
+                    return parser.Serialize(sb, new(exp, revertBack));
                 });
 
             // expression => factor ( ( "-" | "+" ) factor )* ;
@@ -86,6 +104,24 @@ namespace Parlot.Tests.Calc
                     }
 
                     return result;
+                }, static (sb, op, parser) =>
+                {
+                    var revertBack = new System.Collections.Generic.List<(char, Expression)>();
+                    var exp = op;
+                    while (exp is Addition || exp is Subtraction)
+                    {
+                        if (exp is Addition a)
+                        {
+                            revertBack.Add(new('+', a.Right));
+                            exp = a.Left;
+                        }
+                        if (exp is Subtraction s)
+                        {
+                            revertBack.Add(new('-', s.Right));
+                            exp = s.Left;
+                        }
+                    }
+                    return parser.Serialize(sb, new(exp, revertBack));
                 });
 
             Expression = expression;

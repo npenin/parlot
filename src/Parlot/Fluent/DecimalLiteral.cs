@@ -2,6 +2,7 @@
 using System;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -10,6 +11,9 @@ namespace Parlot.Fluent
     {
         private readonly NumberStyles _numberOptions;
         private readonly CultureInfo _culture;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => false;
 
         public DecimalLiteral(NumberStyles numberOptions = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo culture = null)
         {
@@ -90,15 +94,10 @@ namespace Parlot.Fluent
             //
 
             var end = Expression.Variable(typeof(int), $"end{context.NextNumber}");
-#if NETSTANDARD2_0
+
             var sourceToParse = Expression.Variable(typeof(string), $"sourceToParse{context.NextNumber}");
-            var sliceExpression = Expression.Assign(sourceToParse, Expression.Call(context.SubBufferSpan(start, Expression.Subtract(end, start)), nameof(BufferSpan<char>.ToString), Type.EmptyTypes));
+            var sliceExpression = Expression.Assign(sourceToParse, Expression.Call(Expression.Call(context.Buffer(), typeof(BufferSpan<char>).GetMethod("SubBuffer", new[] { typeof(int), typeof(int) }), start, Expression.Subtract(end, start)), typeof(BufferSpan<char>).GetMethod(nameof(BufferSpan<char>.ToString))));
             var tryParseMethodInfo = typeof(decimal).GetMethod(nameof(decimal.TryParse), new[] { typeof(string), typeof(NumberStyles), typeof(IFormatProvider), typeof(decimal).MakeByRefType() });
-#else
-            var sourceToParse = Expression.Variable(typeof(ReadOnlySpan<char>), $"sourceToParse{context.NextNumber}");
-            var sliceExpression = Expression.Assign(sourceToParse, Expression.Call(typeof(MemoryExtensions).GetMethod("AsSpan", new[] { typeof(string), typeof(int), typeof(int) }), context.SubBufferSpan(start, Expression.Subtract(end, start))));
-            var tryParseMethodInfo = typeof(decimal).GetMethod(nameof(decimal.TryParse), new[] { typeof(ReadOnlySpan<char>), typeof(NumberStyles), typeof(IFormatProvider), typeof(decimal).MakeByRefType()});
-#endif
 
             // TODO: NETSTANDARD2_1 code path
             var block =
@@ -129,6 +128,12 @@ namespace Parlot.Fluent
                 );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, decimal value)
+        {
+            sb.Append(value.ToString().ToCharArray());
+            return true;
         }
     }
 }

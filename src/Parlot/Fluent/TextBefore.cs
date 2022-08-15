@@ -9,12 +9,15 @@
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _delimiter;
+        private readonly Parser<T, TParseContext, TChar> _delimiter;
         private readonly bool _canBeEmpty;
         private readonly bool _failOnEof;
         private readonly bool _consumeDelimiter;
 
-        public TextBefore(Parser<T, TParseContext> delimiter, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false)
+        public override bool Serializable => !_consumeDelimiter || _delimiter.Serializable;
+        public override bool SerializableWithoutValue => _canBeEmpty;
+
+        public TextBefore(Parser<T, TParseContext, TChar> delimiter, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false)
         {
             _delimiter = delimiter;
             _canBeEmpty = canBeEmpty;
@@ -193,6 +196,15 @@
             result.Body.Add(block);
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, BufferSpan<TChar> value)
+        {
+            if (!_canBeEmpty || !value.Equals(null))
+                sb.Append(value.ToString());
+            if (_consumeDelimiter)
+                _delimiter.Serialize(sb, default);
+            return true;
         }
     }
 }

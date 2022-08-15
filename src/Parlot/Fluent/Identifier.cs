@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -9,6 +10,9 @@ namespace Parlot.Fluent
     {
         private readonly Func<char, bool> _extraStart;
         private readonly Func<char, bool> _extraPart;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => true;
 
         public Identifier(Func<char, bool> extraStart = null, Func<char, bool> extraPart = null)
         {
@@ -115,6 +119,17 @@ namespace Parlot.Fluent
             );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, BufferSpan<char> value)
+        {
+            var s = value.ToString();
+#if SUPPORTS_READONLYSPAN
+            sb.Append((ReadOnlySpan<char>)s);
+#else
+            sb.Append(s.ToCharArray());
+#endif
+            return s != null;
         }
     }
 }

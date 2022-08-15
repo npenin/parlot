@@ -11,42 +11,42 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that return either of the first successful of the specified parsers.
         /// </summary>
-        public static Parser<T, TParseContext, TChar> OneOf<T>(params Parser<T, TParseContext>[] parsers) => new OneOf<T, TParseContext, TChar>(parsers);
+        public static Parser<T, TParseContext, TChar> OneOf<T>(params Parser<T, TParseContext, TChar>[] parsers) => new OneOf<T, TParseContext, TChar>(parsers);
 
         /// <summary>
         /// Builds a parser that looks for zero or many times a parser separated by another one.
         /// </summary>
-        public static Parser<List<T>, TParseContext, TChar> Separated<U, T>(Parser<U, TParseContext> separator, Parser<T, TParseContext> parser) => new Separated<U, T, TParseContext, TChar>(separator, parser);
+        public static Parser<List<T>, TParseContext, TChar> Separated<U, T>(Parser<U, TParseContext, TChar> separator, Parser<T, TParseContext, TChar> parser) => new Separated<U, T, TParseContext, TChar>(separator, parser);
 
         /// <summary>
         /// Builds a parser that looks for zero or one time the specified parser.
         /// </summary>
-        public static Parser<T, TParseContext, TChar> ZeroOrOne<T>(Parser<T, TParseContext> parser) => new ZeroOrOne<T, TParseContext, TChar>(parser);
+        public static Parser<T, TParseContext, TChar> ZeroOrOne<T>(Parser<T, TParseContext, TChar> parser) => new ZeroOrOne<T, TParseContext, TChar>(parser);
 
         /// <summary>
         /// Builds a parser that creates a scope usable in the specified parser.
         /// </summary>
-        public static Parser<T, TParseContext2, TChar> Scope<T, TParseContext2>(Parser<T, TParseContext2> parser) where TParseContext2 : ScopeParseContext<TChar, TParseContext2> => new ScopedParser<T, TParseContext2, TChar>(parser);
+        public static Parser<T, TParseContext2, TChar> Scope<T, TParseContext2>(Parser<T, TParseContext2, TChar> parser) where TParseContext2 : ScopeParseContext<TChar, TParseContext2> => new ScopedParser<T, TParseContext2, TChar>(parser);
 
         /// <summary>
         /// Builds a parser that creates a scope usable in the specified parser.
         /// </summary>
-        public static Parser<T, TParseContext2> Scope<T, TParseContext2>(Action<TParseContext2> action, Parser<T, TParseContext2> parser) where TParseContext2 : ScopeParseContext<TChar, TParseContext2> => new ScopedParser<T, TParseContext2, TChar>(action, parser);
+        public static Parser<T, TParseContext2> Scope<T, TParseContext2>(Action<TParseContext2> action, Parser<T, TParseContext2, TChar> parser) where TParseContext2 : ScopeParseContext<TChar, TParseContext2> => new ScopedParser<T, TParseContext2, TChar>(action, parser);
 
         /// <summary>
         /// Builds a parser that looks for zero or many times the specified parser.
         /// </summary>
-        public static Parser<List<T>, TParseContext, TChar> ZeroOrMany<T>(Parser<T, TParseContext> parser) => new ZeroOrMany<T, TParseContext, TChar>(parser);
+        public static Parser<List<T>, TParseContext, TChar> ZeroOrMany<T>(Parser<T, TParseContext, TChar> parser) => new ZeroOrMany<T, TParseContext, TChar>(parser);
 
         /// <summary>
         /// Builds a parser that looks for one or many times the specified parser.
         /// </summary>
-        public static Parser<List<T>, TParseContext, TChar> OneOrMany<T>(Parser<T, TParseContext> parser) => new OneOrMany<T, TParseContext, TChar>(parser);
+        public static Parser<List<T>, TParseContext, TChar> OneOrMany<T>(Parser<T, TParseContext, TChar> parser) => new OneOrMany<T, TParseContext, TChar>(parser);
 
         /// <summary>
         /// Builds a parser that succeed when the specified parser fails to match.
         /// </summary>
-        public static Parser<T, TParseContext, TChar> Not<T>(Parser<T, TParseContext> parser) => new Not<T, TParseContext, TChar>(parser);
+        public static Parser<T, TParseContext, TChar> Not<T>(Parser<T, TParseContext, TChar> parser) => new Not<T, TParseContext, TChar>(parser);
 
         /// <summary>
         /// Builds a parser that can be defined later one. Use it when a parser need to be declared before its rule can be set.
@@ -56,22 +56,17 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser than needs a reference to itself to be declared.
         /// </summary>
-        public static Deferred<T, TParseContext> Recursive<T>(Func<Deferred<T, TParseContext>, Parser<T, TParseContext>> parser) => new(parser);
-
-        /// <summary>
-        /// Builds a parser than needs a reference to itself to be declared.
-        /// </summary>
         public static Deferred<T, TParseContext, TChar> Recursive<T>(Func<Deferred<T, TParseContext, TChar>, Parser<T, TParseContext, TChar>> parser) => new(parser);
 
         /// <summary>
         /// Builds a parser that matches the specified parser between two other ones.
         /// </summary>
-        public static Parser<T, TParseContext, TChar> Between<A, T, B>(Parser<A, TParseContext> before, Parser<T, TParseContext> parser, Parser<B, TParseContext> after) => new Between<A, T, B, TParseContext, TChar>(before, parser, after);
+        public static Parser<T, TParseContext, TChar> Between<A, T, B>(Parser<A, TParseContext, TChar> before, Parser<T, TParseContext, TChar> parser, Parser<B, TParseContext, TChar> after) => new Between<A, T, B, TParseContext, TChar>(before, parser, after);
 
         /// <summary>
         /// Builds a parser that matches any chars before a specific parser.
         /// </summary>
-        public static Parser<BufferSpan<TChar>, TParseContext, TChar> AnyCharBefore<T>(Parser<T, TParseContext> parser, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false) => new TextBefore<T, TParseContext, TChar>(parser, canBeEmpty, failOnEof, consumeDelimiter);
+        public static Parser<BufferSpan<TChar>, TParseContext, TChar> AnyCharBefore<T>(Parser<T, TParseContext, TChar> parser, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false) => new TextBefore<T, TParseContext, TChar>(parser, canBeEmpty, failOnEof, consumeDelimiter);
 
         /// <summary>
         /// Builds a parser that captures the output of another parser.

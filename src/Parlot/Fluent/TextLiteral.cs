@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -16,6 +17,9 @@ namespace Parlot.Fluent
         }
 
         public string Text { get; }
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => true;
 
         public override bool Parse(TParseContext context, ref ParseResult<string> result)
         {
@@ -70,6 +74,20 @@ null,
             result.Body.Add(ifReadText);
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, string value)
+        {
+            if (value == null || (_comparer != null && _comparer.Equals(value, Text)) || (_comparer == null && value == Text))
+            {
+#if SUPPORTS_READONLYSPAN
+                sb.Append((ReadOnlySpan<char>)Text);
+#else
+                sb.Append(Text.ToCharArray());
+#endif
+                return true;
+            }
+            return false;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -14,15 +15,18 @@ namespace Parlot.Fluent
     where TChar : IEquatable<TChar>, IConvertible
     {
         private readonly Action<TParseContext> _action;
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
 
-        public ScopedParser(Action<TParseContext> action, Parser<T, TParseContext> parser)
+        public override bool Serializable => _parser.Serializable;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
+
+        public ScopedParser(Action<TParseContext> action, Parser<T, TParseContext, TChar> parser)
         {
             _action = action;
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
 
-        public ScopedParser(Parser<T, TParseContext> parser)
+        public ScopedParser(Parser<T, TParseContext, TChar> parser)
         : this(null, parser)
         {
         }
@@ -34,6 +38,11 @@ namespace Parlot.Fluent
             if (_action != null)
                 _action(context);
             return _parser.Parse(context, ref result);
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, T value)
+        {
+            return _parser.Serialize(sb, value);
         }
     }
 }

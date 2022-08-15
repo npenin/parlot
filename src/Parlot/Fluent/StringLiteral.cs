@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -15,6 +16,9 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<char>
     {
         private readonly StringLiteralQuotes _quotes;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => false;
 
         public StringLiteral(StringLiteralQuotes quotes)
         {
@@ -103,6 +107,24 @@ namespace Parlot.Fluent
                 ));
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, BufferSpan<char> value)
+        {
+            char quoteChar;
+            if (_quotes == StringLiteralQuotes.Single || _quotes == StringLiteralQuotes.SingleOrDouble)
+                quoteChar = '\'';
+            else
+                quoteChar = '"';
+
+            sb.Append(quoteChar);
+#if SUPPORTS_READONLYSPAN
+            sb.Append((ReadOnlySpan<char>)value.ToString()?.Replace("\\", "\\\\")?.Replace(quoteChar.ToString(), "\\" + quoteChar));
+#else
+            sb.Append(value.ToString()?.Replace("\\", "\\\\")?.Replace(quoteChar.ToString(), "\\" + quoteChar).ToCharArray());
+#endif
+            sb.Append(quoteChar);
+            return true;
         }
     }
 }

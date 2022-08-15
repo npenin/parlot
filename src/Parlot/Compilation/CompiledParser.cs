@@ -29,6 +29,9 @@ namespace Parlot.Compilation
             _parse = parse ?? throw new ArgumentNullException(nameof(parse));
         }
 
+        public override bool Serializable => false;
+        public override bool SerializableWithoutValue => false;
+
         public override bool Parse(TParseContext context, ref ParseResult<T> result)
         {
             var start = context.Scanner.Cursor.Offset;
@@ -41,6 +44,11 @@ namespace Parlot.Compilation
             }
 
             return false;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, T value)
+        {
+            throw new NotSupportedException();
         }
     }
 }
