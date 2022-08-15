@@ -114,6 +114,56 @@ namespace Parlot
             return true;
         }
 
+        /// <summary>
+        /// Reads a sequence token enclosed in arbritrary start and end characters.
+        /// </summary>
+        /// <remarks>
+        /// This method doesn't escape the string, but only validates its content is syntactically correct.
+        /// The resulting Span contains the original quotes.
+        /// </remarks>
+        public bool ReadNonEscapableSequence(TChar startSequenceChar, TChar endSequenceChar, out BufferSpan<TChar> result)
+        {
+            var startChar = Cursor.Current;
+
+            if (!startChar.Equals(startSequenceChar))
+            {
+                result = TokenResult.Fail<TChar>();
+                return false;
+            }
+
+            // Fast path if there aren't any escape char until next quote
+            var startOffset = Cursor.Offset + 1;
+            var lastQuote = startOffset;
+
+            int nextQuote;
+            do
+            {
+                nextQuote = Cursor.Buffer.IndexOf(endSequenceChar, lastQuote + 1);
+
+                if (nextQuote == -1)
+                {
+                    if (startOffset == lastQuote)
+                    {
+                        // There is no end sequence character, not a valid escapable sequence
+                        result = TokenResult.Fail<TChar>();
+                        return false;
+                    }
+                    nextQuote = lastQuote - 1;
+                    break;
+                }
+
+                lastQuote = nextQuote + 1;
+            }
+            while (Cursor.Buffer.Length > lastQuote && endSequenceChar.Equals(Cursor.Buffer[lastQuote]));
+
+            var start = Cursor.Position;
+
+            // If the next escape if not before the next quote, we can return the string as-is
+            Cursor.Advance(nextQuote + 2 - startOffset);
+
+            result = TokenResult.Succeed(Buffer, start.Offset, Cursor.Offset);
+            return true;
+        }
     }
 
     public static class CharScannerExtensions

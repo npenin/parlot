@@ -1,5 +1,6 @@
 using Parlot.Fluent;
 using System.Collections.Generic;
+using System.Text;
 using Xunit;
 using static Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
 
@@ -228,14 +229,14 @@ namespace Parlot.Tests
         [Fact]
         public void ShouldCompileCapture()
         {
-            Parser<char, StringParseContext> Dot = Literals.Char('.');
-            Parser<char, StringParseContext> Plus = Literals.Char('+');
-            Parser<char, StringParseContext> Minus = Literals.Char('-');
+            Parser<char, StringParseContext, char> Dot = Literals.Char('.');
+            Parser<char, StringParseContext, char> Plus = Literals.Char('+');
+            Parser<char, StringParseContext, char> Minus = Literals.Char('-');
             Parser<char, StringParseContext, char> At = Literals.Char('@');
-            Parser<BufferSpan<char>, StringParseContext> WordChar = Terms.Pattern(char.IsLetterOrDigit);
-            Parser<List<char>, StringParseContext> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Plus, Minus));
-            Parser<List<char>, StringParseContext> WordDotMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Minus));
-            Parser<List<char>, StringParseContext> WordMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Minus));
+            Parser<BufferSpan<char>, StringParseContext, char> WordChar = Terms.Pattern(char.IsLetterOrDigit);
+            Parser<List<char>, StringParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Plus, Minus));
+            Parser<List<char>, StringParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Minus));
+            Parser<List<char>, StringParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Minus));
             Parser<BufferSpan<char>, StringParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
 
             string _email = "sebastien.ros@gmail.com";
@@ -258,6 +259,9 @@ namespace Parlot.Tests
 
             public bool SkipWhiteSpace { get; }
 
+            public override bool Serializable => true;
+            public override bool SerializableWithoutValue => true;
+
             public override bool Parse(StringParseContext context, ref ParseResult<char> result)
             {
                 context.EnterParser(this);
@@ -276,6 +280,12 @@ namespace Parlot.Tests
                 }
 
                 return false;
+            }
+
+            public override bool Serialize(BufferSpanBuilder<char> sb, char value)
+            {
+                sb.Append(Char);
+                return true;
             }
         }
 

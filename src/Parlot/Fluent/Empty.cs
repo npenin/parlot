@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -12,6 +13,9 @@ namespace Parlot.Fluent
     where TChar : IEquatable<TChar>, IConvertible
     {
         private readonly T _value;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => _value == null && typeof(T) == typeof(object);
 
         public Empty()
         {
@@ -40,6 +44,13 @@ namespace Parlot.Fluent
             _ = context.DeclareValueVariable(result, Expression.Constant(_value));
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, T value)
+        {
+            if (_value is IConvertible)
+                sb.Append(value);
+            return true;
         }
     }
 }

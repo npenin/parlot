@@ -22,21 +22,20 @@ namespace Parlot.Fluent
         /// </summary>
         public static TermBuilder<TParseContext> Terms => new(DefaultCulture);
 
-
         /// <summary>
         /// Builds a parser that return either of the first successful of the specified parsers.
         /// </summary>
-        public static Parser<T, TParseContext, char> OneOf<T>(params Parser<T, TParseContext>[] parsers) => Parsers<TParseContext, char>.OneOf(parsers);
+        public static Parser<T, TParseContext, char> OneOf<T>(params Parser<T, TParseContext, char>[] parsers) => Parsers<TParseContext, char>.OneOf(parsers);
 
         /// <summary>
         /// Builds a parser that looks for zero or many times a parser separated by another one.
         /// </summary>
-        public static Parser<List<T>, TParseContext, char> Separated<U, T>(Parser<U, TParseContext> separator, Parser<T, TParseContext> parser) => Parsers<TParseContext, char>.Separated(separator, parser);
+        public static Parser<List<T>, TParseContext, char> Separated<U, T>(Parser<U, TParseContext, char> separator, Parser<T, TParseContext, char> parser) => Parsers<TParseContext, char>.Separated(separator, parser);
 
         /// <summary>
         /// Builds a parser that looks for zero or one time the specified parser.
         /// </summary>
-        public static Parser<T, TParseContext, char> ZeroOrOne<T>(Parser<T, TParseContext> parser) => Parsers<TParseContext, char>.ZeroOrOne(parser);
+        public static Parser<T, TParseContext, char> ZeroOrOne<T>(Parser<T, TParseContext, char> parser) => Parsers<TParseContext, char>.ZeroOrOne(parser);
 
         /// <summary>
         /// Builds a parser that creates a scope usable in the specified parser.
@@ -46,17 +45,12 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that looks for zero or many times the specified parser.
         /// </summary>
-        public static Parser<List<T>, TParseContext, char> ZeroOrMany<T>(Parser<T, TParseContext> parser) => Parsers<TParseContext, char>.ZeroOrMany(parser);
+        public static Parser<List<T>, TParseContext, char> ZeroOrMany<T>(Parser<T, TParseContext, char> parser) => Parsers<TParseContext, char>.ZeroOrMany(parser);
 
         /// <summary>
         /// Builds a parser that looks for one or many times the specified parser.
         /// </summary>
-        public static Parser<List<T>, TParseContext, char> OneOrMany<T>(Parser<T, TParseContext> parser) => Parsers<TParseContext, char>.OneOrMany(parser);
-
-        /// <summary>
-        /// Builds a parser that succeed when the specified parser fails to match.
-        /// </summary>
-        public static Parser<T, TParseContext> Not<T>(Parser<T, TParseContext> parser) => Parsers<TParseContext, char>.Not(parser);
+        public static Parser<List<T>, TParseContext, char> OneOrMany<T>(Parser<T, TParseContext, char> parser) => Parsers<TParseContext, char>.OneOrMany(parser);
 
         /// <summary>
         /// Builds a parser that succeed when the specified parser fails to match.
@@ -71,22 +65,17 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser than needs a reference to itself to be declared.
         /// </summary>
-        public static Deferred<T, TParseContext> Recursive<T>(Func<Deferred<T, TParseContext>, Parser<T, TParseContext>> parser) => Parsers<TParseContext, char>.Recursive(parser);
-
-        /// <summary>
-        /// Builds a parser than needs a reference to itself to be declared.
-        /// </summary>
         public static Deferred<T, TParseContext, char> Recursive<T>(Func<Deferred<T, TParseContext, char>, Parser<T, TParseContext, char>> parser) => Parsers<TParseContext, char>.Recursive(parser);
 
         /// <summary>
         /// Builds a parser that matches the specified parser between two other ones.
         /// </summary>
-        public static Parser<T, TParseContext, char> Between<A, T, B>(Parser<A, TParseContext> before, Parser<T, TParseContext> parser, Parser<B, TParseContext> after) => Parsers<TParseContext, char>.Between(before, parser, after);
+        public static Parser<T, TParseContext, char> Between<A, T, B>(Parser<A, TParseContext, char> before, Parser<T, TParseContext, char> parser, Parser<B, TParseContext, char> after) => Parsers<TParseContext, char>.Between(before, parser, after);
 
         /// <summary>
         /// Builds a parser that matches any chars before a specific parser.
         /// </summary>
-        public static Parser<BufferSpan<char>, TParseContext, char> AnyCharBefore<T>(Parser<T, TParseContext> parser, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false) => Parsers<TParseContext, char>.AnyCharBefore(parser, canBeEmpty, failOnEof, consumeDelimiter);
+        public static Parser<BufferSpan<char>, TParseContext, char> AnyCharBefore<T>(Parser<T, TParseContext, char> parser, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false) => Parsers<TParseContext, char>.AnyCharBefore(parser, canBeEmpty, failOnEof, consumeDelimiter);
 
         /// <summary>
         /// Builds a parser that captures the output of another parser.
@@ -124,7 +113,7 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that skips white spaces before another one.
         /// </summary>
-        public static Parser<T, TParseContext, char> SkipWhiteSpace<T>(Parser<T, TParseContext> parser) => new SkipWhiteSpace<T, TParseContext>(parser);
+        public static Parser<T, TParseContext, char> SkipWhiteSpace<T>(Parser<T, TParseContext, char> parser) => new SkipWhiteSpace<T, TParseContext>(parser);
     }
 
 
@@ -246,4 +235,5 @@ namespace Parlot.Fluent
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Parser<BufferSpan<char>, TParseContext, char> Pattern(Func<char, bool> predicate, int minSize = 1, int maxSize = 0) => StringParsers<TParseContext>.SkipWhiteSpace(Parsers<TParseContext, char>.Pattern(predicate, minSize, maxSize));
     }
+
 }

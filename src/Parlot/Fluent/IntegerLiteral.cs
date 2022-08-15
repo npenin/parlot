@@ -2,6 +2,7 @@
 using System;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -9,6 +10,9 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<char>
     {
         private readonly NumberStyles _numberOptions;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => false;
 
         public IntegerLiteral(NumberStyles numberOptions = NumberStyles.Integer)
         {
@@ -71,11 +75,11 @@ namespace Parlot.Fluent
             var end = Expression.Variable(typeof(int), $"end{context.NextNumber}");
 #if NETSTANDARD2_0
             var sourceToParse = Expression.Variable(typeof(string), $"sourceToParse{context.NextNumber}");
-            var sliceExpression = Expression.Assign(sourceToParse, Expression.Call(context.Buffer(), typeof(string).GetMethod("Substring", new[] { typeof(int), typeof(int) }), start, Expression.Subtract(end, start)));
+            var sliceExpression = Expression.Assign(sourceToParse, Expression.Call(Expression.Call(context.Buffer(), typeof(BufferSpan<char>).GetMethod("SubBuffer", new[] { typeof(int), typeof(int) }), start, Expression.Subtract(end, start)), typeof(BufferSpan<char>).GetMethod(nameof(BufferSpan<char>.ToString))));
             var tryParseMethodInfo = typeof(long).GetMethod(nameof(long.TryParse), new[] { typeof(string), typeof(NumberStyles), typeof(IFormatProvider), typeof(long).MakeByRefType() });
 #else
             var sourceToParse = Expression.Variable(typeof(ReadOnlySpan<char>), $"sourceToParse{context.NextNumber}");
-            var sliceExpression = Expression.Assign(sourceToParse, Expression.Call(typeof(MemoryExtensions).GetMethod("AsSpan", new[] { typeof(string), typeof(int), typeof(int) }), context.Buffer(), start, Expression.Subtract(end, start)));
+            var sliceExpression = Expression.Assign(sourceToParse, Expression.Property(Expression.Call(context.Buffer(), typeof(BufferSpan<char>).GetMethod("SubBuffer", new[] { typeof(int), typeof(int) }), start, Expression.Subtract(end, start)), typeof(BufferSpan<char>).GetProperty("Span")));
             var tryParseMethodInfo = typeof(long).GetMethod(nameof(long.TryParse), new[] { typeof(ReadOnlySpan<char>), typeof(NumberStyles), typeof(IFormatProvider), typeof(long).MakeByRefType()});
 #endif
 
@@ -91,7 +95,7 @@ namespace Parlot.Fluent
                             Expression.Call(
                                 tryParseMethodInfo,
                                 sourceToParse,
-                                Expression.Constant(NumberStyles.AllowLeadingSign),
+                                Expression.Constant(_numberOptions),
                                 Expression.Constant(CultureInfo.InvariantCulture),
                                 value)
                             )
@@ -108,6 +112,12 @@ namespace Parlot.Fluent
                 );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, long value)
+        {
+            sb.Append(value);
+            return true;
         }
     }
 }

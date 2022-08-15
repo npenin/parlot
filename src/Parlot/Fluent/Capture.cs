@@ -10,6 +10,9 @@ namespace Parlot.Fluent
     {
         private readonly Parser<T, TParseContext> _parser;
 
+        public override bool Serializable => _parser.Serializable;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
+
         public Capture(Parser<T, TParseContext> parser)
         {
             _parser = parser;
@@ -98,6 +101,14 @@ namespace Parlot.Fluent
             );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, BufferSpan<TChar> value)
+        {
+            if (value.Buffer == null)
+                return false;
+            sb.Append(value);
+            return true;
         }
     }
 }
