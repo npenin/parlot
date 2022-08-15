@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -9,9 +10,12 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
 
-        public ZeroOrOne(Parser<T, TParseContext> parser)
+        public override bool Serializable => _parser.Serializable;
+        public override bool SerializableWithoutValue => true;
+
+        public ZeroOrOne(Parser<T, TParseContext, TChar> parser)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
@@ -60,6 +64,13 @@ namespace Parlot.Fluent
             result.Body.Add(block);
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, T value)
+        {
+            if (value != null && !value.Equals(null))
+                _parser.Serialize(sb, value);
+            return true;
         }
     }
 }

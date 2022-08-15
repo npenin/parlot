@@ -10,10 +10,13 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
         private readonly string _message;
 
-        public ElseError(Parser<T, TParseContext> parser, string message)
+        public override bool Serializable => _parser.Serializable;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
+
+        public ElseError(Parser<T, TParseContext, TChar> parser, string message)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _message = message;
@@ -69,16 +72,24 @@ namespace Parlot.Fluent
 
             return result;
         }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, T value)
+        {
+            return _parser.Serialize(sb, value);
+        }
     }
 
     public sealed class Error<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
         private readonly string _message;
 
-        public Error(Parser<T, TParseContext> parser, string message)
+        public override bool Serializable => _parser.Serializable;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
+
+        public Error(Parser<T, TParseContext, TChar> parser, string message)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _message = message;
@@ -133,16 +144,24 @@ namespace Parlot.Fluent
 
             return result;
         }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, T value)
+        {
+            return _parser.Serialize(sb, value);
+        }
     }
 
     public sealed class Error<T, U, TParseContext, TChar> : Parser<U, TParseContext, TChar>, ICompilable<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
         private readonly string _message;
 
-        public Error(Parser<T, TParseContext> parser, string message)
+        public override bool Serializable => _parser.SerializableWithoutValue;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
+
+        public Error(Parser<T, TParseContext, TChar> parser, string message)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _message = message;
@@ -192,6 +211,11 @@ namespace Parlot.Fluent
             result.Body.Add(block);
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, U value)
+        {
+            return _parser.Serialize(sb, default);
         }
     }
 }

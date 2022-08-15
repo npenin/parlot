@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -11,6 +12,9 @@ namespace Parlot.Fluent
         private readonly Func<TChar, bool> _predicate;
         private readonly int _minSize;
         private readonly int _maxSize;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => false;
 
         public PatternLiteral(Func<TChar, bool> predicate, int minSize = 1, int maxSize = 0)
         {
@@ -154,6 +158,12 @@ namespace Parlot.Fluent
                 );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, BufferSpan<TChar> value)
+        {
+            sb.Append(value.ToString());
+            return true;
         }
     }
 }

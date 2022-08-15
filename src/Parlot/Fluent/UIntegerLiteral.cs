@@ -2,6 +2,7 @@
 using System;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -9,6 +10,9 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<char>
     {
         private readonly NumberStyles _options;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => false;
 
         public UIntegerLiteral(NumberStyles options)
         {
@@ -108,6 +112,12 @@ namespace Parlot.Fluent
                 );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, ulong value)
+        {
+            sb.Append(value);
+            return true;
         }
     }
 }

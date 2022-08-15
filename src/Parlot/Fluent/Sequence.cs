@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -8,9 +9,13 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        internal readonly Parser<T1, TParseContext> _parser1;
-        internal readonly Parser<T2, TParseContext> _parser2;
-        public Sequence(Parser<T1, TParseContext> parser1, Parser<T2, TParseContext> parser2)
+        internal readonly Parser<T1, TParseContext, TChar> _parser1;
+        internal readonly Parser<T2, TParseContext, TChar> _parser2;
+
+        public override bool Serializable => _parser1.Serializable && _parser2.Serializable;
+        public override bool SerializableWithoutValue => _parser1.SerializableWithoutValue && _parser2.SerializableWithoutValue;
+
+        public Sequence(Parser<T1, TParseContext, TChar> parser1, Parser<T2, TParseContext, TChar> parser2)
         {
             _parser1 = parser1 ?? throw new ArgumentNullException(nameof(parser1));
             _parser2 = parser2 ?? throw new ArgumentNullException(nameof(parser2));
@@ -53,18 +58,27 @@ namespace Parlot.Fluent
         {
             return SequenceCompileHelper.CreateSequenceCompileResult(BuildSkippableParsers(context), context);
         }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, (T1, T2) value)
+        {
+            return _parser1.Serialize(sb, value.Item1) &&
+            _parser2.Serialize(sb, value.Item2);
+        }
     }
 
     public sealed class Sequence<T1, T2, T3, TParseContext, TChar> : Parser<ValueTuple<T1, T2, T3>, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISkippableSequenceParser<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<ValueTuple<T1, T2>, TParseContext> _parser;
-        internal readonly Parser<T3, TParseContext> _lastParser;
+        private readonly Parser<ValueTuple<T1, T2>, TParseContext, TChar> _parser;
+        internal readonly Parser<T3, TParseContext, TChar> _lastParser;
 
-        public Sequence(Parser<ValueTuple<T1, T2>, TParseContext>
+        public override bool Serializable => _parser.Serializable && _lastParser.Serializable;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue && _lastParser.SerializableWithoutValue;
+
+        public Sequence(Parser<ValueTuple<T1, T2>, TParseContext, TChar>
             parser,
-            Parser<T3, TParseContext> lastParser
+            Parser<T3, TParseContext, TChar> lastParser
             )
         {
             _parser = parser;
@@ -115,16 +129,25 @@ namespace Parlot.Fluent
         {
             return SequenceCompileHelper.CreateSequenceCompileResult(BuildSkippableParsers(context), context);
         }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, (T1, T2, T3) value)
+        {
+            return _parser.Serialize(sb, new(value.Item1, value.Item2)) &&
+            _lastParser.Serialize(sb, value.Item3);
+        }
     }
 
     public sealed class Sequence<T1, T2, T3, T4, TParseContext, TChar> : Parser<ValueTuple<T1, T2, T3, T4>, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISkippableSequenceParser<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<ValueTuple<T1, T2, T3>, TParseContext> _parser;
-        internal readonly Parser<T4, TParseContext> _lastParser;
+        private readonly Parser<ValueTuple<T1, T2, T3>, TParseContext, TChar> _parser;
+        internal readonly Parser<T4, TParseContext, TChar> _lastParser;
 
-        public Sequence(Parser<ValueTuple<T1, T2, T3>, TParseContext> parser, Parser<T4, TParseContext> lastParser)
+        public override bool Serializable => _lastParser.Serializable && _parser.Serializable;
+        public override bool SerializableWithoutValue => _lastParser.SerializableWithoutValue && _parser.SerializableWithoutValue;
+
+        public Sequence(Parser<ValueTuple<T1, T2, T3>, TParseContext, TChar> parser, Parser<T4, TParseContext, TChar> lastParser)
         {
             _parser = parser;
             _lastParser = lastParser ?? throw new ArgumentNullException(nameof(lastParser));
@@ -175,16 +198,25 @@ namespace Parlot.Fluent
         {
             return SequenceCompileHelper.CreateSequenceCompileResult(BuildSkippableParsers(context), context);
         }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, (T1, T2, T3, T4) value)
+        {
+            return _parser.Serialize(sb, new(value.Item1, value.Item2, value.Item3)) &&
+             _lastParser.Serialize(sb, value.Item4);
+        }
     }
 
     public sealed class Sequence<T1, T2, T3, T4, T5, TParseContext, TChar> : Parser<ValueTuple<T1, T2, T3, T4, T5>, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISkippableSequenceParser<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<ValueTuple<T1, T2, T3, T4>, TParseContext> _parser;
-        internal readonly Parser<T5, TParseContext> _lastParser;
+        private readonly Parser<ValueTuple<T1, T2, T3, T4>, TParseContext, TChar> _parser;
+        internal readonly Parser<T5, TParseContext, TChar> _lastParser;
 
-        public Sequence(Parser<ValueTuple<T1, T2, T3, T4>, TParseContext> parser, Parser<T5, TParseContext> lastParser)
+        public override bool Serializable => _lastParser.Serializable && _parser.Serializable;
+        public override bool SerializableWithoutValue => _lastParser.SerializableWithoutValue && _parser.SerializableWithoutValue;
+
+        public Sequence(Parser<ValueTuple<T1, T2, T3, T4>, TParseContext, TChar> parser, Parser<T5, TParseContext, TChar> lastParser)
         {
             _parser = parser;
             _lastParser = lastParser ?? throw new ArgumentNullException(nameof(lastParser));
@@ -236,16 +268,25 @@ namespace Parlot.Fluent
         {
             return SequenceCompileHelper.CreateSequenceCompileResult(BuildSkippableParsers(context), context);
         }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, (T1, T2, T3, T4, T5) value)
+        {
+            return _parser.Serialize(sb, new(value.Item1, value.Item2, value.Item3, value.Item4)) &&
+            _lastParser.Serialize(sb, value.Item5);
+        }
     }
 
     public sealed class Sequence<T1, T2, T3, T4, T5, T6, TParseContext, TChar> : Parser<ValueTuple<T1, T2, T3, T4, T5, T6>, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISkippableSequenceParser<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<ValueTuple<T1, T2, T3, T4, T5>, TParseContext> _parser;
-        internal readonly Parser<T6, TParseContext> _lastParser;
+        private readonly Parser<ValueTuple<T1, T2, T3, T4, T5>, TParseContext, TChar> _parser;
+        internal readonly Parser<T6, TParseContext, TChar> _lastParser;
 
-        public Sequence(Parser<ValueTuple<T1, T2, T3, T4, T5>, TParseContext> parser, Parser<T6, TParseContext> lastParser)
+        public override bool Serializable => _lastParser.Serializable && _parser.Serializable;
+        public override bool SerializableWithoutValue => _lastParser.SerializableWithoutValue && _parser.SerializableWithoutValue;
+
+        public Sequence(Parser<ValueTuple<T1, T2, T3, T4, T5>, TParseContext, TChar> parser, Parser<T6, TParseContext, TChar> lastParser)
         {
             _parser = parser;
             _lastParser = lastParser ?? throw new ArgumentNullException(nameof(lastParser));
@@ -299,16 +340,26 @@ namespace Parlot.Fluent
         {
             return SequenceCompileHelper.CreateSequenceCompileResult(BuildSkippableParsers(context), context);
         }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, (T1, T2, T3, T4, T5, T6) value)
+        {
+            return _parser.Serialize(sb, new(value.Item1, value.Item2, value.Item3, value.Item4, value.Item5)) &&
+            _lastParser.Serialize(sb, value.Item6);
+
+        }
     }
 
     public sealed class Sequence<T1, T2, T3, T4, T5, T6, T7, TParseContext, TChar> : Parser<ValueTuple<T1, T2, T3, T4, T5, T6, T7>, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISkippableSequenceParser<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<ValueTuple<T1, T2, T3, T4, T5, T6>, TParseContext> _parser;
-        internal readonly Parser<T7, TParseContext> _lastParser;
+        private readonly Parser<ValueTuple<T1, T2, T3, T4, T5, T6>, TParseContext, TChar> _parser;
+        internal readonly Parser<T7, TParseContext, TChar> _lastParser;
 
-        public Sequence(Parser<ValueTuple<T1, T2, T3, T4, T5, T6>, TParseContext> parser, Parser<T7, TParseContext> lastParser)
+        public override bool Serializable => _lastParser.Serializable && _parser.Serializable;
+        public override bool SerializableWithoutValue => _lastParser.SerializableWithoutValue && _parser.SerializableWithoutValue;
+
+        public Sequence(Parser<ValueTuple<T1, T2, T3, T4, T5, T6>, TParseContext, TChar> parser, Parser<T7, TParseContext, TChar> lastParser)
         {
             _parser = parser;
             _lastParser = lastParser ?? throw new ArgumentNullException(nameof(lastParser));
@@ -362,6 +413,12 @@ namespace Parlot.Fluent
         public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             return SequenceCompileHelper.CreateSequenceCompileResult(BuildSkippableParsers(context), context);
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, (T1, T2, T3, T4, T5, T6, T7) value)
+        {
+            return _parser.Serialize(sb, new(value.Item1, value.Item2, value.Item3, value.Item4, value.Item5, value.Item6))
+             && _lastParser.Serialize(sb, value.Item7);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -8,12 +9,15 @@ namespace Parlot.Fluent
         where TParseContext : ParseContextWithScanner<TChar>
         where A : T
         where B : T
-        where TChar : IEquatable<TChar>, IConvertible
+        where TChar : IConvertible, IEquatable<TChar>
     {
-        private readonly Parser<A, TParseContext> _parserA;
-        private readonly Parser<B, TParseContext> _parserB;
+        private readonly Parser<A, TParseContext, TChar> _parserA;
+        private readonly Parser<B, TParseContext, TChar> _parserB;
 
-        public OneOf(Parser<A, TParseContext> parserA, Parser<B, TParseContext> parserB)
+        public override bool Serializable => _parserA.Serializable && _parserB.Serializable;
+        public override bool SerializableWithoutValue => false;
+
+        public OneOf(Parser<A, TParseContext, TChar> parserA, Parser<B, TParseContext, TChar> parserB)
         {
             _parserA = parserA ?? throw new ArgumentNullException(nameof(parserA));
             _parserB = parserB ?? throw new ArgumentNullException(nameof(parserB));
@@ -105,108 +109,19 @@ namespace Parlot.Fluent
 
             return result;
         }
-    }
 
-
-    public sealed class OneOf<A, B, T, TParseContext> : Parser<T, TParseContext>, ICompilable<TParseContext>
-        where TParseContext : ParseContext
-        where A : T
-        where B : T
-    {
-        private readonly Parser<A, TParseContext> _parserA;
-        private readonly Parser<B, TParseContext> _parserB;
-
-        public OneOf(Parser<A, TParseContext> parserA, Parser<B, TParseContext> parserB)
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, T value)
         {
-            _parserA = parserA ?? throw new ArgumentNullException(nameof(parserA));
-            _parserB = parserB ?? throw new ArgumentNullException(nameof(parserB));
-        }
-
-        public override bool Parse(TParseContext context, ref ParseResult<T> result)
-        {
-            context.EnterParser(this);
-
-            var resultA = new ParseResult<A>();
-
-            if (_parserA.Parse(context, ref resultA))
+            if (value is A a)
             {
-                result.Set(resultA.Start, resultA.End, resultA.Value);
-
-                return true;
+                return _parserA.Serialize(sb, a);
             }
-
-            var resultB = new ParseResult<B>();
-
-            if (_parserB.Parse(context, ref resultB))
+            else if (value is B b)
             {
-                result.Set(resultB.Start, resultB.End, resultB.Value);
-
-                return true;
+                return _parserB.Serialize(sb, b);
             }
-
-            return false;
-        }
-
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
-        {
-            var result = new CompilationResult();
-
-            var success = context.DeclareSuccessVariable(result, false);
-            var value = context.DeclareValueVariable(result, Expression.Default(typeof(T)));
-
-            // T value;
-            //
-            // parse1 instructions
-            // 
-            // if (parser1.Success)
-            // {
-            //    success = true;
-            //    value = (T) parse1.Value;
-            // }
-            // else
-            // {
-            //   parse2 instructions
-            //   
-            //   if (parser2.Success)
-            //   {
-            //      success = true;
-            //      value = (T) parse2.Value
-            //   }
-            // }
-
-            var parser1CompileResult = _parserA.Build(context);
-            var parser2CompileResult = _parserB.Build(context);
-
-            result.Body.Add(
-                Expression.Block(
-                    parser1CompileResult.Variables,
-                    Expression.Block(parser1CompileResult.Body),
-                    Expression.IfThenElse(
-                        parser1CompileResult.Success,
-                        Expression.Block(
-                            Expression.Assign(success, Expression.Constant(true, typeof(bool))),
-                            context.DiscardResult
-                            ? Expression.Empty()
-                            : Expression.Assign(value, Expression.Convert(parser1CompileResult.Value, typeof(T)))
-                            ),
-                        Expression.Block(
-                            parser2CompileResult.Variables,
-                            Expression.Block(parser2CompileResult.Body),
-                            Expression.IfThen(
-                                parser2CompileResult.Success,
-                                Expression.Block(
-                                    Expression.Assign(success, Expression.Constant(true, typeof(bool))),
-                                    context.DiscardResult
-                                    ? Expression.Empty()
-                                    : Expression.Assign(value, Expression.Convert(parser2CompileResult.Value, typeof(T)))
-                                    )
-                                )
-                            )
-                        )
-                    )
-                );
-
-            return result;
+            else
+                throw new FormatException("Could not serialize value");
         }
     }
 }

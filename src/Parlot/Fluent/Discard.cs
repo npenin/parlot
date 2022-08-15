@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -11,16 +12,19 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
         private readonly U _value;
 
-        public Discard(Parser<T, TParseContext> parser)
+        public override bool Serializable => _parser.SerializableWithoutValue;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
+
+        public Discard(Parser<T, TParseContext, TChar> parser)
         {
             _value = default(U);
             _parser = parser;
         }
 
-        public Discard(Parser<T, TParseContext> parser, U value)
+        public Discard(Parser<T, TParseContext, TChar> parser, U value)
         {
             _parser = parser;
             _value = value;
@@ -67,70 +71,12 @@ namespace Parlot.Fluent
 
             return result;
         }
-    }
 
-
-    /// <summary>
-    /// Doesn't parse anything and return the default value.
-    /// </summary>
-    public sealed class Discard<T, U, TParseContext> : Parser<U, TParseContext>, ICompilable<TParseContext>
-    where TParseContext : ParseContext
-    {
-        private readonly Parser<T, TParseContext> _parser;
-        private readonly U _value;
-
-        public Discard(Parser<T, TParseContext> parser)
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, U value)
         {
-            _value = default(U);
-            _parser = parser;
-        }
-
-        public Discard(Parser<T, TParseContext> parser, U value)
-        {
-            _parser = parser;
-            _value = value;
-        }
-
-        public override bool Parse(TParseContext context, ref ParseResult<U> result)
-        {
-            context.EnterParser(this);
-
-            var parsed = new ParseResult<T>();
-
-            if (_parser.Parse(context, ref parsed))
-            {
-                result.Set(parsed.Start, parsed.End, _value);
-                return true;
-            }
-
-            return false;
-        }
-
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
-        {
-            var result = new CompilationResult();
-
-            var success = context.DeclareSuccessVariable(result, false);
-            _ = context.DeclareValueVariable(result, Expression.Constant(_value));
-
-            var parserCompileResult = _parser.Build(context);
-
-            // success = false;
-            // value = _value;
-            // 
-            // parser instructions
-            // 
-            // success = parser.success;
-
-            result.Body.Add(
-                Expression.Block(
-                    parserCompileResult.Variables,
-                    Expression.Block(parserCompileResult.Body),
-                    Expression.Assign(success, parserCompileResult.Success)
-                    )
-                );
-
-            return result;
+            return _parser.Serialize(sb, default);
         }
     }
+
+
 }

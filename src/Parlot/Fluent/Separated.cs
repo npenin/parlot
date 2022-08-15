@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -9,10 +10,13 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<U, TParseContext> _separator;
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<U, TParseContext, TChar> _separator;
+        private readonly Parser<T, TParseContext, TChar> _parser;
 
-        public Separated(Parser<U, TParseContext> separator, Parser<T, TParseContext> parser)
+        public override bool Serializable => _parser.Serializable && _separator.Serializable;
+        public override bool SerializableWithoutValue => true;
+
+        public Separated(Parser<U, TParseContext, TChar> separator, Parser<T, TParseContext, TChar> parser)
         {
             _separator = separator ?? throw new ArgumentNullException(nameof(separator));
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
@@ -135,6 +139,22 @@ namespace Parlot.Fluent
             result.Body.Add(block);
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, List<T> value)
+        {
+            var isFirst = true;
+            if (value != null)
+                foreach (var item in value)
+                {
+                    if (isFirst)
+                        isFirst = false;
+                    else
+                        _separator.Serialize(sb, default);
+
+                    _parser.Serialize(sb, item);
+                }
+            return value != null;
         }
     }
 }

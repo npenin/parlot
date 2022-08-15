@@ -1,5 +1,6 @@
 ﻿using Parlot.Compilation;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -7,6 +8,9 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<char>
     {
         private readonly bool _includeNewLines;
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => true;
 
         public WhiteSpaceLiteral(bool includeNewLines)
         {
@@ -68,6 +72,17 @@ namespace Parlot.Fluent
                 );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, BufferSpan<char> value)
+        {
+            if (value.Equals(null))
+                sb.Append(value);
+            else if (_includeNewLines)
+                sb.Append(System.Environment.NewLine.ToCharArray());
+            else
+                sb.Append(' ');
+            return true;
         }
     }
 }

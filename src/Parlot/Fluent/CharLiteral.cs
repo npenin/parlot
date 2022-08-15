@@ -1,6 +1,7 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
@@ -14,6 +15,9 @@ namespace Parlot.Fluent
         }
 
         public TChar Char { get; }
+
+        public override bool Serializable => true;
+        public override bool SerializableWithoutValue => true;
 
         public override bool Parse(TParseContext context, ref ParseResult<TChar> result)
         {
@@ -56,6 +60,16 @@ namespace Parlot.Fluent
             );
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, TChar value)
+        {
+            if (Char.Equals(value) || default(TChar).Equals(value))
+            {
+                sb.Append(Char);
+                return true;
+            }
+            return false;
         }
     }
 }

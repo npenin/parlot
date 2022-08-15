@@ -1,17 +1,21 @@
 ﻿using Parlot.Compilation;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace Parlot.Fluent
 {
     public sealed class SkipWhiteSpace<T, TParseContext> : Parser<T, TParseContext, char>, ICompilable<TParseContext, char>
     where TParseContext : ParseContextWithScanner<char>
     {
-        private readonly Parser<T, TParseContext> _parser;
-        private readonly Parser<BufferSpan<char>, TParseContext> _whiteSpaceParser;
+        private readonly Parser<T, TParseContext, char> _parser;
+        private readonly Parser<BufferSpan<char>, TParseContext, char> _whiteSpaceParser;
 
         private static readonly bool canUseNewLines = typeof(TParseContext).IsAssignableFrom(typeof(StringParseContext));
 
-        public SkipWhiteSpace(Parser<T, TParseContext> parser, Parser<BufferSpan<char>, TParseContext> whiteSpaceParser = null)
+        public override bool Serializable => _parser.Serializable && (_whiteSpaceParser == null || _whiteSpaceParser.Serializable);
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue && (_whiteSpaceParser == null || _whiteSpaceParser.SerializableWithoutValue);
+
+        public SkipWhiteSpace(Parser<T, TParseContext, char> parser, Parser<BufferSpan<char>, TParseContext, char> whiteSpaceParser = null)
         {
             _parser = parser;
             _whiteSpaceParser = whiteSpaceParser;
@@ -106,6 +110,19 @@ namespace Parlot.Fluent
             }
 
             return result;
+        }
+
+        public override bool Serialize(BufferSpanBuilder<char> sb, T value)
+        {
+            if (sb.Length > 0)
+            {
+                if (_whiteSpaceParser is not null)
+                    _whiteSpaceParser.Serialize(sb, default);
+                else
+                    sb.Append(' ');
+            }
+            return _parser.Serialize(sb, value);
+
         }
     }
 }
