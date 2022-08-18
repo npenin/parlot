@@ -66,7 +66,7 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches any chars before a specific parser.
         /// </summary>
-        public static Parser<BufferSpan<TChar>, TParseContext, TChar> AnyCharBefore<T>(Parser<T, TParseContext, TChar> parser, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false) => new TextBefore<T, TParseContext, TChar>(parser, canBeEmpty, failOnEof, consumeDelimiter);
+        public static Parser<BufferSpan<TChar>, TParseContext, TChar> AnyCharBefore<T>(Parser<T, TParseContext, TChar> parser, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false) => new UpTo<T, TParseContext, TChar>(parser, canBeEmpty, failOnEof, consumeDelimiter);
 
         /// <summary>
         /// Builds a parser that captures the output of another parser.

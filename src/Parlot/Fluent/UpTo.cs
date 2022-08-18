@@ -5,7 +5,7 @@
     using System.Linq;
     using System.Linq.Expressions;
 
-    public sealed class TextBefore<T, TParseContext, TChar> : Parser<BufferSpan<TChar>, TParseContext, TChar>, ICompilable<TParseContext, TChar>
+    public sealed class UpTo<T, TParseContext, TChar> : Parser<BufferSpan<TChar>, TParseContext, TChar>, ICompilable<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -17,7 +17,7 @@
         public override bool Serializable => !_consumeDelimiter || _delimiter.Serializable;
         public override bool SerializableWithoutValue => _canBeEmpty;
 
-        public TextBefore(Parser<T, TParseContext, TChar> delimiter, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false)
+        public UpTo(Parser<T, TParseContext, TChar> delimiter, bool canBeEmpty = false, bool failOnEof = false, bool consumeDelimiter = false)
         {
             _delimiter = delimiter;
             _canBeEmpty = canBeEmpty;

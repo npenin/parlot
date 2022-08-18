@@ -1,9 +1,8 @@
 ﻿using Parlot.Compilation;
 using System;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace Parlot.Fluent
+namespace Parlot.Fluent.Char
 {
     public enum StringLiteralQuotes
     {

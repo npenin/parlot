@@ -1,8 +1,7 @@
 ﻿using Parlot.Compilation;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace Parlot.Fluent
+namespace Parlot.Fluent.Char
 {
     public sealed class NonWhiteSpaceLiteral<TParseContext> : Parser<BufferSpan<char>, TParseContext, char>, ICompilable<TParseContext, char>
     where TParseContext : ParseContextWithScanner<char>

@@ -1,4 +1,5 @@
 using Parlot.Fluent;
+using Parlot.Fluent.Char;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using static Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;

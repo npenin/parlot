@@ -7,9 +7,13 @@ public class Property
     public string Name;
     public TypeCode TypeCode;
 
-    public bool isFixedSize;
+    public bool IsFixedSize;
 
-    public object value;
-
-    
+    public object Value;
+    public uint Index;
+    public bool Repeated;
+    public bool Optional;
+    public string Type;
+    public bool Required;
+    public Declaration Declaration;
 }

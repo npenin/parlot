@@ -47,6 +47,29 @@ namespace Parlot
 
             return true;
         }
+        public bool ReadN(ulong length, out BufferSpan<TChar> result)
+        {
+            if (!Cursor.Eof)
+            {
+                result = TokenResult.Fail<TChar>();
+                return false;
+            }
+
+            var start = Cursor.Offset;
+
+            // At this point we have an identifier, read while it's an identifier part.
+            for (ulong i = 0; i < length; i++)
+            {
+                if (!Cursor.AdvanceOnce())
+                {
+                    result = TokenResult.Fail<TChar>();
+                    return false;
+                }
+            }
+
+            result = TokenResult.Succeed(Buffer, start, Cursor.Offset);
+            return true;
+        }
 
 
         /// <summary>
@@ -80,6 +103,17 @@ namespace Parlot
             return true;
         }
 
+
+        /// <summary>
+        /// Reads the specified text.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TChar ReadSingle()
+        {
+            var current = Cursor.Current;
+            Cursor.Advance();
+            return current;
+        }
 
         /// <summary>
         /// Reads the specified text.

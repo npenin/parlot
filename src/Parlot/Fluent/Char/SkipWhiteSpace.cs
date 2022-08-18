@@ -1,8 +1,7 @@
 ﻿using Parlot.Compilation;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace Parlot.Fluent
+namespace Parlot.Fluent.Char
 {
     public sealed class SkipWhiteSpace<T, TParseContext> : Parser<T, TParseContext, char>, ICompilable<TParseContext, char>
     where TParseContext : ParseContextWithScanner<char>
@@ -10,7 +9,7 @@ namespace Parlot.Fluent
         private readonly Parser<T, TParseContext, char> _parser;
         private readonly Parser<BufferSpan<char>, TParseContext, char> _whiteSpaceParser;
 
-        private static readonly bool canUseNewLines = typeof(TParseContext).IsAssignableFrom(typeof(StringParseContext));
+        private static readonly bool canUseNewLines = typeof(StringParseContext).IsAssignableFrom(typeof(TParseContext));
 
         public override bool Serializable => _parser.Serializable && (_whiteSpaceParser == null || _whiteSpaceParser.Serializable);
         public override bool SerializableWithoutValue => _parser.SerializableWithoutValue && (_whiteSpaceParser == null || _whiteSpaceParser.SerializableWithoutValue);
@@ -26,18 +25,13 @@ namespace Parlot.Fluent
             context.EnterParser(this);
 
             var start = context.Scanner.Cursor.Position;
-
             // Use the scanner's logic to ignore whitespaces since it knows about multi-line grammars
             if (_whiteSpaceParser is null)
             {
                 if (!canUseNewLines || ((StringParseContext)(object)context).UseNewLines)
-                {
                     context.Scanner.SkipWhiteSpace();
-                }
                 else
-                {
                     context.Scanner.SkipWhiteSpaceOrNewLine();
-                }
             }
             else
             {

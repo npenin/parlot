@@ -34,6 +34,12 @@ namespace Parlot
         {
             return new(Buffer, start + Offset, length);
         }
+        public T[] ToArray()
+        {
+            T[] result = new T[Length];
+            Array.Copy(Buffer, Offset, result, 0, Length);
+            return result;
+        }
 
         public readonly int Length;
         public readonly int Offset;

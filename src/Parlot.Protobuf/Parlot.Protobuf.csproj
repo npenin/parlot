@@ -6,7 +6,7 @@
     <Description>Parlot is a fast, lightweight and simple to use .NET parser combinator.</Description>
     <PackageTags>parser;interpreter;</PackageTags>
     <IsPackable>true</IsPackable>
-    <AssemblyOriginatorKeyFile>../Parlot.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../Parlot/Parlot.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>

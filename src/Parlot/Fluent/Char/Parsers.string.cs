@@ -113,7 +113,7 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that skips white spaces before another one.
         /// </summary>
-        public static Parser<T, TParseContext, char> SkipWhiteSpace<T>(Parser<T, TParseContext, char> parser) => new SkipWhiteSpace<T, TParseContext>(parser);
+        public static Parser<T, TParseContext, char> SkipWhiteSpace<T>(Parser<T, TParseContext, char> parser) => new Char.SkipWhiteSpace<T, TParseContext>(parser);
     }
 
 
@@ -130,17 +130,17 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches whitespaces.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> WhiteSpace(bool includeNewLines = false) => new WhiteSpaceLiteral<TParseContext>(includeNewLines);
+        public Parser<BufferSpan<char>, TParseContext, char> WhiteSpace(bool includeNewLines = false) => new Char.WhiteSpaceLiteral<TParseContext>(includeNewLines);
 
         /// <summary>
         /// Builds a parser that matches anything until whitespaces.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> NonWhiteSpace(bool includeNewLines = false) => new NonWhiteSpaceLiteral<TParseContext>(includeNewLines: includeNewLines);
+        public Parser<BufferSpan<char>, TParseContext, char> NonWhiteSpace(bool includeNewLines = false) => new Char.NonWhiteSpaceLiteral<TParseContext>(includeNewLines: includeNewLines);
 
         /// <summary>
         /// Builds a parser that matches the specified text.
         /// </summary>
-        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => new TextLiteral<TParseContext>(text, comparer: caseInsensitive ? StringComparer.OrdinalIgnoreCase : null);
+        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => new Char.TextLiteral<TParseContext>(text, comparer: caseInsensitive ? StringComparer.OrdinalIgnoreCase : null);
 
         /// <summary>
         /// Builds a parser that matches the specified char.
@@ -150,26 +150,26 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches an integer.
         /// </summary>
-        public Parser<long, TParseContext, char> Integer(NumberStyles options = NumberStyles.Integer) => new IntegerLiteral<TParseContext>(options);
+        public Parser<long, TParseContext, char> Integer(NumberStyles options = NumberStyles.Integer) => new Char.IntegerLiteral<TParseContext>(options);
         /// <summary>
         /// Builds a parser that matches an unsigned integer.
         /// </summary>
-        public Parser<ulong, TParseContext, char> UInteger(NumberStyles options = NumberStyles.Integer) => new UIntegerLiteral<TParseContext>(options);
+        public Parser<ulong, TParseContext, char> UInteger(NumberStyles options = NumberStyles.Integer) => new Char.UIntegerLiteral<TParseContext>(options);
 
         /// <summary>
         /// Builds a parser that matches a floating point number.
         /// </summary>
-        public Parser<decimal, TParseContext, char> Decimal() => new DecimalLiteral<TParseContext>();
+        public Parser<decimal, TParseContext, char> Decimal() => new Char.DecimalLiteral<TParseContext>();
 
         /// <summary>
         /// Builds a parser that matches an quoted string that can be escaped.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> String(StringLiteralQuotes quotes = StringLiteralQuotes.SingleOrDouble) => new StringLiteral<TParseContext>(quotes);
+        public Parser<BufferSpan<char>, TParseContext, char> String(Char.StringLiteralQuotes quotes = Fluent.Char.StringLiteralQuotes.SingleOrDouble) => new Char.StringLiteral<TParseContext>(quotes);
 
         /// <summary>
         /// Builds a parser that matches an identifier.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> Identifier(Func<char, bool> extraStart = null, Func<char, bool> extraPart = null) => new Identifier<TParseContext>(extraStart, extraPart);
+        public Parser<BufferSpan<char>, TParseContext, char> Identifier(Func<char, bool> extraStart = null, Func<char, bool> extraPart = null) => new Char.Identifier<TParseContext>(extraStart, extraPart);
 
         /// <summary>
         /// Builds a parser that matches a char against a predicate.
@@ -194,12 +194,12 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches anything until whitespaces.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> NonWhiteSpace(bool includeNewLines = false) => StringParsers<TParseContext>.SkipWhiteSpace(new NonWhiteSpaceLiteral<TParseContext>(includeNewLines: includeNewLines));
+        public Parser<BufferSpan<char>, TParseContext, char> NonWhiteSpace(bool includeNewLines = false) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.NonWhiteSpaceLiteral<TParseContext>(includeNewLines: includeNewLines));
 
         /// <summary>
         /// Builds a parser that matches the specified text.
         /// </summary>
-        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => StringParsers<TParseContext>.SkipWhiteSpace(new TextLiteral<TParseContext>(text, comparer: caseInsensitive ? StringComparer.OrdinalIgnoreCase : null));
+        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.TextLiteral<TParseContext>(text, comparer: caseInsensitive ? StringComparer.OrdinalIgnoreCase : null));
 
         /// <summary>
         /// Builds a parser that matches the specified char.
@@ -209,22 +209,22 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches an integer.
         /// </summary>
-        public Parser<long, TParseContext, char> Integer(NumberStyles numberOptions = NumberStyles.None) => StringParsers<TParseContext>.SkipWhiteSpace(new IntegerLiteral<TParseContext>(numberOptions));
+        public Parser<long, TParseContext, char> Integer(NumberStyles numberOptions = NumberStyles.None) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.IntegerLiteral<TParseContext>(numberOptions));
 
         /// <summary>
         /// Builds a parser that matches a floating point number.
         /// </summary>
-        public Parser<decimal, TParseContext, char> Decimal(NumberStyles numberOptions = NumberStyles.AllowDecimalPoint, CultureInfo culture = null) => StringParsers<TParseContext>.SkipWhiteSpace(new DecimalLiteral<TParseContext>(numberOptions, culture ?? DefaultCulture));
+        public Parser<decimal, TParseContext, char> Decimal(NumberStyles numberOptions = NumberStyles.AllowDecimalPoint, CultureInfo culture = null) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.DecimalLiteral<TParseContext>(numberOptions, culture ?? DefaultCulture));
 
         /// <summary>
         /// Builds a parser that matches an quoted string that can be escaped.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> String(StringLiteralQuotes quotes = StringLiteralQuotes.SingleOrDouble) => StringParsers<TParseContext>.SkipWhiteSpace(new StringLiteral<TParseContext>(quotes));
+        public Parser<BufferSpan<char>, TParseContext, char> String(Char.StringLiteralQuotes quotes = Fluent.Char.StringLiteralQuotes.SingleOrDouble) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.StringLiteral<TParseContext>(quotes));
 
         /// <summary>
         /// Builds a parser that matches an identifier.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> Identifier(Func<char, bool> extraStart = null, Func<char, bool> extraPart = null) => StringParsers<TParseContext>.SkipWhiteSpace(new Identifier<TParseContext>(extraStart, extraPart));
+        public Parser<BufferSpan<char>, TParseContext, char> Identifier(Func<char, bool> extraStart = null, Func<char, bool> extraPart = null) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.Identifier<TParseContext>(extraStart, extraPart));
 
         /// <summary>
         /// Builds a parser that matches a char against a predicate.

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Parlot/Parlot.csproj" />
+    <ProjectReference Include="../../src/Parlot.Protobuf/Parlot.Protobuf.csproj" />
   </ItemGroup>
 
   <ItemGroup>

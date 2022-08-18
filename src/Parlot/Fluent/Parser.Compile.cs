@@ -11,22 +11,6 @@ namespace Parlot.Fluent
         /// Compiles the current parser.
         /// </summary>
         /// <returns>A compiled parser.</returns>
-        public static Parser<T, StringParseContext, char> Compile<T>(this Parser<T, StringParseContext, char> self)
-        {
-            return self.Compile<T, StringParseContext, char>();
-        }
-        /// <summary>
-        /// Compiles the current parser.
-        /// </summary>
-        /// <returns>A compiled parser.</returns>
-        public static Parser<T, StringParseContext> Compile<T>(this Parser<T, StringParseContext> self)
-        {
-            return self.Compile<T, StringParseContext, char>();
-        }
-        /// <summary>
-        /// Compiles the current parser.
-        /// </summary>
-        /// <returns>A compiled parser.</returns>
         public static Parser<T, TParseContext> Compile<T, TParseContext, TChar>(this Parser<T, TParseContext> self)
         where TParseContext : ParseContextWithScanner<TChar>
         where TChar : IEquatable<TChar>, IConvertible

@@ -2,9 +2,8 @@
 using System;
 using System.Globalization;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace Parlot.Fluent
+namespace Parlot.Fluent.Char
 {
     public sealed class UIntegerLiteral<TParseContext> : Parser<ulong, TParseContext, char>, ICompilable<TParseContext, char>
     where TParseContext : ParseContextWithScanner<char>
