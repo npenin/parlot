@@ -1,10 +1,11 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System;
 using System.Linq.Expressions;
 
 namespace Parlot.Fluent
 {
-    public sealed class Between<A, T, B, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>
+    public sealed class Between<A, T, B, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISeekable<TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -22,11 +23,19 @@ namespace Parlot.Fluent
             _after = after ?? throw new ArgumentNullException(nameof(after));
         }
 
+        public bool CanSeek => _before is ISeekable<TChar> seekable && seekable.CanSeek;
+
+        public TChar[] ExpectedChars => _before is ISeekable<TChar> seekable ? seekable.ExpectedChars : default;
+
+        public bool SkipWhitespace => _before is ISeekable<TChar> seekable && seekable.SkipWhitespace;
+
         public override bool Parse(TParseContext context, ref ParseResult<T> result)
         {
             context.EnterParser(this);
 
-            var start = context.Scanner.Cursor.Position;
+            var cursor = context.Scanner.Cursor;
+
+            var start = cursor.Position;
 
             var parsedA = new ParseResult<A>();
 
@@ -38,7 +47,7 @@ namespace Parlot.Fluent
 
             if (!_parser.Parse(context, ref result))
             {
-                context.Scanner.Cursor.ResetPosition(start);
+                cursor.ResetPosition(start);
                 return false;
             }
 
@@ -46,7 +55,7 @@ namespace Parlot.Fluent
 
             if (!_after.Parse(context, ref parsedB))
             {
-                context.Scanner.Cursor.ResetPosition(start);
+                cursor.ResetPosition(start);
                 return false;
             }
 

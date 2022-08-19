@@ -1,4 +1,5 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace Parlot.Fluent
 {
-    public sealed class ZeroOrMany<T, TParseContext, TChar> : Parser<List<T>, TParseContext, TChar>, ICompilable<TParseContext, TChar>
+    public sealed class ZeroOrMany<T, TParseContext, TChar> : Parser<List<T>, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISeekable<TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -19,6 +20,12 @@ namespace Parlot.Fluent
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
+
+        public bool CanSeek => _parser is ISeekable<TChar> seekable && seekable.CanSeek;
+
+        public TChar[] ExpectedChars => _parser is ISeekable<TChar> seekable ? seekable.ExpectedChars : default;
+
+        public bool SkipWhitespace => _parser is ISeekable<TChar> seekable && seekable.SkipWhitespace;
 
         public override bool Parse(TParseContext context, ref ParseResult<List<T>> result)
         {

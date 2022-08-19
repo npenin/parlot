@@ -8,12 +8,12 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
 
         public override bool Serializable => _parser.Serializable;
         public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
 
-        public Capture(Parser<T, TParseContext> parser)
+        public Capture(Parser<T, TParseContext, TChar> parser)
         {
             _parser = parser;
         }
@@ -50,11 +50,7 @@ namespace Parlot.Fluent
             var value = context.DeclareValueVariable(result, Expression.Default(typeof(BufferSpan<TChar>)));
 
             // var start = context.Scanner.Cursor.Position;
-
-            var start = Expression.Variable(typeof(TextPosition), $"start{context.NextNumber}");
-            result.Variables.Add(start);
-
-            result.Body.Add(Expression.Assign(start, context.Position()));
+            var start = context.DeclarePositionVariable(result);
 
             var ignoreResults = context.DiscardResult;
             context.DiscardResult = true;
@@ -88,7 +84,9 @@ namespace Parlot.Fluent
                     Expression.IfThenElse(
                         parserCompileResult.Success,
                         Expression.Block(
-                            Expression.Assign(value,
+                            context.DiscardResult
+                            ? Expression.Empty()
+                            : Expression.Assign(value,
                                 context.SubBufferSpan(
                                     startOffset,
                                     Expression.Subtract(context.Offset(), startOffset)

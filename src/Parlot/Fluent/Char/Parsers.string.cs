@@ -80,7 +80,7 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that captures the output of another parser.
         /// </summary>
-        public static Parser<BufferSpan<char>, TParseContext, char> Capture<T>(Parser<T, TParseContext> parser) => Parsers<TParseContext, char>.Capture<T>(parser);
+        public static Parser<BufferSpan<char>, TParseContext, char> Capture<T>(Parser<T, TParseContext, char> parser) => Parsers<TParseContext, char>.Capture<T>(parser);
 
         /// <summary>
         /// Builds a parser that always succeeds.
@@ -140,7 +140,7 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches the specified text.
         /// </summary>
-        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => new Char.TextLiteral<TParseContext>(text, comparer: caseInsensitive ? StringComparer.OrdinalIgnoreCase : null);
+        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => new Char.TextLiteral<TParseContext>(text, caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
         /// <summary>
         /// Builds a parser that matches the specified char.
@@ -199,7 +199,7 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches the specified text.
         /// </summary>
-        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.TextLiteral<TParseContext>(text, comparer: caseInsensitive ? StringComparer.OrdinalIgnoreCase : null));
+        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.TextLiteral<TParseContext>(text, caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
 
         /// <summary>
         /// Builds a parser that matches the specified char.

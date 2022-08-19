@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Parlot.Fluent
 {
-    public sealed class OneOf<A, B, T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext>
+    public sealed class OneOf<A, B, T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>
         where TParseContext : ParseContextWithScanner<TChar>
         where A : T
         where B : T
@@ -48,7 +48,7 @@ namespace Parlot.Fluent
             return false;
         }
 
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
+        public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             var result = new CompilationResult();
 

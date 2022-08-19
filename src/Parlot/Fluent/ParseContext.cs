@@ -4,6 +4,12 @@ namespace Parlot.Fluent
 {
     public partial class ParseContext
     {
+        public static int DefaultCompilationThreshold = 0;
+
+        /// <summary>
+        /// The number of usages of the parser before it is compiled automatically. <c>0</c> to disable automatic compilation. Default is 0.
+        /// </summary>
+        public int CompilationThreshold { get; set; } = DefaultCompilationThreshold;
 
         /// <summary>
         /// Delegate that is executed whenever a parser is invoked.

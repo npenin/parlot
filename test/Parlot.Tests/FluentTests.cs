@@ -1,3 +1,4 @@
+using System;
 using Parlot.Fluent;
 using Parlot.Fluent.Char;
 using System.Collections.Generic;
@@ -245,7 +246,7 @@ namespace Parlot.Tests
                     .And(b).Then((c, t) => c.Get<string>(t.Item1)));
 
             Assert.IsType<ScopedParser<string, ParseContext.Untyped, char>>(o2);
-            Assert.False(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("a".ToCharArray())), out _));
+            Assert.False(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("a".AsSpan())), out _));
             Assert.True(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("ab".ToCharArray())), out var result));
             Assert.Equal("ipsum", result);
 
@@ -569,10 +570,30 @@ namespace Parlot.Tests
         {
             Assert.False(Literals.Char('a').Error("'a' was not expected").TryParse("a", out _, out var error));
             Assert.Equal("'a' was not expected", error.Message);
+
+            Assert.False(Literals.Char('a').Error<int>("'a' was not expected").TryParse("a", out _, out error));
+            Assert.Equal("'a' was not expected", error.Message);
+        }
+
+        [Fact]
+        public void ErrorShouldReturnFalseThrowIfParserFails()
+        {
+            Assert.False(Literals.Char('a').Error("'a' was not expected").TryParse("b", out _, out var error));
+            Assert.Null(error);
+
+            Assert.False(Literals.Char('a').Error<int>("'a' was not expected").TryParse("b", out _, out error));
+            Assert.Null(error);
         }
 
         [Fact]
         public void ErrorShouldThrow()
+        {
+            Assert.False(Literals.Char('a').Error("'a' was not expected").TryParse("a", out _, out var error));
+            Assert.Equal("'a' was not expected", error.Message);
+        }
+
+        [Fact]
+        public void ErrorShouldResetPosition()
         {
             Assert.False(Literals.Char('a').Error("'a' was not expected").TryParse("a", out _, out var error));
             Assert.Equal("'a' was not expected", error.Message);
@@ -637,15 +658,28 @@ namespace Parlot.Tests
         {
             var parser = Separated(Terms.Char(','), Terms.Decimal());
 
-            Assert.Null(parser.Parse(""));
             Assert.Single(parser.Parse("1"));
+            Assert.Equal(2, parser.Parse("1,2").Count);
             Assert.Null(parser.Parse(",1,"));
+            Assert.Null(parser.Parse(""));
 
             var result = parser.Parse("1, 2,3");
 
             Assert.Equal(1, result[0]);
             Assert.Equal(2, result[1]);
             Assert.Equal(3, result[2]);
+        }
+
+        [Fact]
+        public void SeparatedShouldNotBeConsumedIfNotFollowedByValue()
+        {
+            // This test ensures that the separator is not consumed if there is no valid net value.
+
+            var parser = Separated(Terms.Char(','), Terms.Decimal()).AndSkip(Terms.Char(',')).And(Terms.Identifier()).Then(x => true);
+
+            Assert.False(parser.Parse("1"));
+            Assert.False(parser.Parse("1,"));
+            Assert.True(parser.Parse("1,x"));
         }
 
         [Fact]
@@ -668,6 +702,16 @@ namespace Parlot.Tests
 
             Assert.True(parser.TryParse(" ab", out var result1));
             Assert.Equal(" ab", result1);
+        }
+
+        [Fact]
+        public void OneOfShouldNotFailWithLookupConflicts()
+        {
+            var parser = Literals.Text("abc").Or(Literals.Text("ab")).Or(Literals.Text("a"));
+
+            Assert.True(parser.TryParse("a", out _));
+            Assert.True(parser.TryParse("ab", out _));
+            Assert.True(parser.TryParse("abc", out _));
         }
 
         [Fact]

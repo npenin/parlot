@@ -8,7 +8,7 @@ namespace Parlot.Fluent
     /// <summary>
     /// Doesn't parse anything and return the default value.
     /// </summary>
-    public sealed class Empty<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext>
+    public sealed class Empty<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -36,7 +36,7 @@ namespace Parlot.Fluent
             return true;
         }
 
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
+        public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             var result = new CompilationResult();
 

@@ -29,7 +29,7 @@ namespace Parlot.Tests.Json
 
             var jsonArray =
                 Between(LBracket, Separated(Comma, json), RBracket)
-                    .Then<IJson>(static els => new JsonArray(els.ToImmutableArray()));
+                    .Then<IJson>(static els => new JsonArray(els.ToArray()));
 
             var jsonMember =
                 String.And(Colon).And(json)
@@ -37,7 +37,7 @@ namespace Parlot.Tests.Json
 
             var jsonObject =
                 Between(LBrace, Separated(Comma, jsonMember), RBrace)
-                    .Then<IJson>(static kvps => new JsonObject(kvps.ToImmutableDictionary()));
+                    .Then<IJson>(static kvps => new JsonObject(new Dictionary<string, IJson>(kvps)));
 
             Json = json.Parser = jsonString.Or(jsonArray).Or(jsonObject);
         }

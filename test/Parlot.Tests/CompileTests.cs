@@ -182,6 +182,16 @@ namespace Parlot.Tests
         }
 
         [Fact]
+        public void ShouldCompileOneOrManys()
+        {
+            var parser = OneOrMany(Terms.Text("hello").Or(Terms.Text("world"))).Compile();
+
+            var result = parser.Parse(" hello world hello");
+
+            Assert.Equal(new[] { "hello", "world", "hello" }, result);
+        }
+
+        [Fact]
         public void ShouldCompileZeroOrOne()
         {
             var parser = ZeroOrOne(Terms.Text("hello")).Compile();
@@ -201,19 +211,32 @@ namespace Parlot.Tests
         }
 
         [Fact]
-        public void ShouldCompileSeparatedChar()
+        public void ShouldcompiledSeparated()
         {
             var parser = Separated(Terms.Char(','), Terms.Decimal()).Compile();
 
-            Assert.Null(parser.Parse(""));
             Assert.Single(parser.Parse("1"));
+            Assert.Equal(2, parser.Parse("1,2").Count);
             Assert.Null(parser.Parse(",1,"));
+            Assert.Null(parser.Parse(""));
 
             var result = parser.Parse("1, 2,3");
 
             Assert.Equal(1, result[0]);
             Assert.Equal(2, result[1]);
             Assert.Equal(3, result[2]);
+        }
+
+        [Fact]
+        public void SeparatedShouldNotBeConsumedIfNotFollowedByValueCompiled()
+        {
+            // This test ensures that the separator is not consumed if there is no valid net value.
+
+            var parser = Separated(Terms.Char(','), Terms.Decimal()).AndSkip(Terms.Char(',')).And(Terms.Identifier()).Then(x => true).Compile();
+
+            Assert.False(parser.Parse("1"));
+            Assert.False(parser.Parse("1,"));
+            Assert.True(parser.Parse("1,x"));
         }
 
         [Fact]
@@ -432,6 +455,19 @@ namespace Parlot.Tests
         {
             Assert.False(Literals.Char('a').Error("'a' was not expected").Compile().TryParse("a", out _, out var error));
             Assert.Equal("'a' was not expected", error.Message);
+
+            Assert.False(Literals.Char('a').Error<int>("'a' was not expected").Compile().TryParse("a", out _, out error));
+            Assert.Equal("'a' was not expected", error.Message);
+        }
+
+        [Fact]
+        public void ErrorShouldReturnFalseThrowIfParserFails()
+        {
+            Assert.False(Literals.Char('a').Error("'a' was not expected").Compile().TryParse("b", out _, out var error));
+            Assert.Null(error);
+
+            Assert.False(Literals.Char('a').Error<int>("'a' was not expected").Compile().TryParse("b", out _, out error));
+            Assert.Null(error);
         }
 
         [Fact]
@@ -524,7 +560,7 @@ namespace Parlot.Tests
         [Fact]
         public void TextWithWhiteSpaceCompiledShouldResetPosition()
         {
-            var code = OneOf(Terms.Text("a"), Literals.Text(" b"));
+            var code = OneOf(Terms.Text("a"), Literals.Text(" b")).Compile();
 
             Assert.True(code.TryParse(" b", out _));
         }
@@ -574,6 +610,38 @@ namespace Parlot.Tests
                 SkipWhiteSpace(Literals.WhiteSpace(includeNewLines: true).SkipAnd(Literals.Text("ab"))).Compile()
                 .TryParse(new StringParseContext(" \nab", useNewLines: true),
                 out var _, out var _));
+        }
+
+        [Fact]
+        public void OneOfCompileShouldNotFailWithLookupConflicts()
+        {
+            var parser = OneOf(Literals.Text(">="), Literals.Text(">"), Literals.Text("<="), Literals.Text("<")).Compile();
+
+            Assert.Equal("<", parser.Parse("<"));
+            Assert.Equal("<=", parser.Parse("<="));
+            Assert.Equal(">", parser.Parse(">"));
+            Assert.Equal(">=", parser.Parse(">="));
+        }
+
+        [Fact]
+        public void CanCompileSubTree()
+        {
+            Parser<char, StringParseContext, char> Dot = Literals.Char('.');
+            Parser<char, StringParseContext, char> Plus = Literals.Char('+');
+            Parser<char, StringParseContext, char> Minus = Literals.Char('-');
+            Parser<char, StringParseContext, char> At = Literals.Char('@');
+            Parser<BufferSpan<char>, StringParseContext, char> WordChar = Literals.Pattern(char.IsLetterOrDigit).Compile();
+            Parser<List<char>, StringParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Plus, Minus));
+            Parser<List<char>, StringParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Minus));
+            Parser<List<char>, StringParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Minus));
+            Parser<BufferSpan<char>, StringParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
+
+            string _email = "sebastien.ros@gmail.com";
+
+            var parser = Email.Compile();
+            var result = parser.Parse(_email);
+
+            Assert.Equal(_email, result.ToString());
         }
     }
 }

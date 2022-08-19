@@ -24,9 +24,12 @@ namespace Parlot.Compilation
     {
         private readonly Func<TParseContext, ValueTuple<bool, T>> _parse;
 
-        public CompiledParser(Func<TParseContext, ValueTuple<bool, T>> parse)
+        public Parser<T, TParseContext, TChar> Source { get; }
+
+        public CompiledParser(Func<TParseContext, ValueTuple<bool, T>> parse, Parser<T, TParseContext, TChar> source)
         {
             _parse = parse ?? throw new ArgumentNullException(nameof(parse));
+            Source = source;
         }
 
         public override bool Serializable => false;
@@ -34,12 +37,13 @@ namespace Parlot.Compilation
 
         public override bool Parse(TParseContext context, ref ParseResult<T> result)
         {
-            var start = context.Scanner.Cursor.Offset;
+            var cursor = context.Scanner.Cursor;
+            var start = cursor.Offset;
             var parsed = _parse(context);
 
             if (parsed.Item1)
             {
-                result.Set(start, context.Scanner.Cursor.Offset, parsed.Item2);
+                result.Set(start, cursor.Offset, parsed.Item2);
                 return true;
             }
 

@@ -1,7 +1,10 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
+using Parlot.Fluent;
 using Parlot.Tests.Calc;
 using Parlot.Tests.Json;
+using static Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
+using Parsers = Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
 
 namespace Parlot.Benchmarks
 {
@@ -10,6 +13,11 @@ namespace Parlot.Benchmarks
     {
         private const string _stringWithEscapes = "This is a new line \\n \\t and a tab and some \\xa0";
         private const string _stringWithoutEscapes = "This is a new line \n \t and a tab and some \xa0";
+        private readonly Parser<char, StringParseContext, char> _lookupExpression = Parsers.OneOf(Parsers.Terms.Char('a'), Parsers.Terms.Char('b'), Parsers.Terms.Char('v'), Parsers.Terms.Char('d'));
+        private readonly Parser<char, StringParseContext, char> _whitespaceExpression = Parsers.Terms.Char('a');
+
+        // Exercises Cursor.Match(string)
+        private readonly Parser<string, StringParseContext, char> _matchStringExpression = Parsers.OneOf(Parsers.Literals.Text("hello"), Parsers.Literals.Text("goodbye"));
 
         private readonly JsonBench _jsonBench = new();
         private readonly ExprBench _exprBench = new();
@@ -18,6 +26,54 @@ namespace Parlot.Benchmarks
         public void Setup()
         {
             _jsonBench.Setup();
+        }
+
+        [Benchmark, BenchmarkCategory("Compilation")]
+        public Parser<char, StringParseContext, char> CreateCompiledSmallParser()
+        {
+            return Parsers.OneOf(Parsers.Terms.Char('a'), Parsers.Terms.Char('b'), Parsers.Terms.Char('v'), Parsers.Terms.Char('d')).Compile();
+        }
+
+        [Benchmark, BenchmarkCategory("Compilation")]
+        public Parser<Expression, StringParseContext, char> CreateCompiledExpressionParser()
+        {
+            return FluentParser.Expression.Compile();
+        }
+
+        [Benchmark, BenchmarkCategory("Cursor.Match(string)")]
+        public string CursorMatchHello()
+        {
+            return _matchStringExpression.Parse("hello");
+        }
+
+        [Benchmark, BenchmarkCategory("Cursor.Match(string)")]
+        public string CursorMatchGoodbye()
+        {
+            return _matchStringExpression.Parse("goodbye");
+        }
+
+        [Benchmark, BenchmarkCategory("Cursor.Match(string)")]
+        public string CursorMatchNone()
+        {
+            return _matchStringExpression.Parse("hellllo");
+        }
+
+        [Benchmark, BenchmarkCategory("Lookup")]
+        public char Lookup()
+        {
+            return _lookupExpression.Parse("d");
+        }
+
+        [Benchmark, BenchmarkCategory("WhiteSpace")]
+        public char SkipWhiteSpace_1()
+        {
+            return _whitespaceExpression.Parse(new StringParseContext(new Scanner<char>(" a".ToCharArray()), useNewLines: true));
+        }
+
+        [Benchmark, BenchmarkCategory("WhiteSpace")]
+        public char SkipWhiteSpace_10()
+        {
+            return _whitespaceExpression.Parse(new StringParseContext(new Scanner<char>("          a".ToCharArray()), useNewLines: true));
         }
 
         [Benchmark, BenchmarkCategory("DecodeString")]

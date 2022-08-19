@@ -67,27 +67,27 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that converts the previous result when it succeeds.
         /// </summary>
-        public Parser<U, TParseContext, TChar> Then<U>(Func<T, U> conversion, Func<U, T> conversionBack = null) => new ThenWithScanner<T, U, TParseContext, TChar>(this, conversion, conversionBack);
+        public Parser<U, TParseContext, TChar> Then<U>(Func<T, U> conversion, Func<U, T> conversionBack = null) => new Then<T, U, TParseContext, TChar>(this, conversion, conversionBack);
 
         /// <summary>
         /// Builds a parser that converts the previous result when it succeeds.
         /// </summary>
-        public Parser<U, TParseContext, TChar> Then<U>(Func<T, U> conversion, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> serializer) => new ThenWithScanner<T, U, TParseContext, TChar>(this, conversion, serializer);
+        public Parser<U, TParseContext, TChar> Then<U>(Func<T, U> conversion, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> serializer) => new Then<T, U, TParseContext, TChar>(this, conversion, serializer);
 
         /// <summary>
         /// Builds a parser that converts the previous result, and can alter the current <see cref="ParseContext"/>.
         /// </summary>
-        public Parser<U, TParseContext, TChar> Then<U>(Func<TParseContext, T, U> conversion, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> serializer = null) => new ThenWithScanner<T, U, TParseContext, TChar>(this, conversion, serializer);
+        public Parser<U, TParseContext, TChar> Then<U>(Func<TParseContext, T, U> conversion, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> serializer = null) => new Then<T, U, TParseContext, TChar>(this, conversion, serializer);
 
         /// <summary>
         /// Builds a parser that converts the previous result when it succeeds.
         /// </summary>
-        public Parser<T, TParseContext, TChar> Then(Action<T> action) => new ThenWithScanner<T, TParseContext, TChar>(this, action);
+        public Parser<T, TParseContext, TChar> Then(Action<T> action) => new Then<T, TParseContext, TChar>(this, action);
 
         /// <summary>
         /// Builds a parser that converts the previous result, and can alter the current <see cref="ParseContext"/>.
         /// </summary>
-        public Parser<T, TParseContext, TChar> Then(Action<TParseContext, T> action) => new ThenWithScanner<T, TParseContext, TChar>(this, action);
+        public Parser<T, TParseContext, TChar> Then(Action<TParseContext, T> action) => new Then<T, TParseContext, TChar>(this, action);
 
 
         /// <summary>
@@ -117,10 +117,9 @@ namespace Parlot.Fluent
         public Parser<T, TParseContext, TChar> When(Func<T, bool> predicate, Func<T> defaultValue = null) => new When<T, TParseContext, TChar>(this, predicate, defaultValue);
 
         /// <summary>
-        /// Builds a parser what returns another one based on the previous result.
+        /// Builds a parser that returns another one based on the previous result.
         /// </summary>
         public Parser<U, TParseContext, TChar> Switch<U>(Func<TParseContext, T, Parser<U, TParseContext, TChar>> action, Func<U, T> reverseAction = null) => new Switch<T, U, TParseContext, TChar>(this, action, reverseAction);
-
 
         /// <summary>
         /// Builds a parser that discards the previous result and replaces it by the specified type or value.

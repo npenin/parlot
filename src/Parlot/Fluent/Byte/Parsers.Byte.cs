@@ -67,7 +67,7 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that captures the output of another parser.
         /// </summary>
-        public static Parser<BufferSpan<byte>, TParseContext, byte> Capture<T>(Parser<T, TParseContext> parser) => Parsers<TParseContext, byte>.Capture<T>(parser);
+        public static Parser<BufferSpan<byte>, TParseContext, byte> Capture<T>(Parser<T, TParseContext, byte> parser) => Parsers<TParseContext, byte>.Capture<T>(parser);
 
         /// <summary>
         /// Builds a parser that always succeeds.

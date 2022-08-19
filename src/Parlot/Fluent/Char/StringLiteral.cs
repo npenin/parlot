@@ -1,4 +1,5 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System;
 using System.Linq.Expressions;
 
@@ -11,7 +12,7 @@ namespace Parlot.Fluent.Char
         SingleOrDouble
     }
 
-    public sealed class StringLiteral<TParseContext> : Parser<BufferSpan<char>, TParseContext, char>, ICompilable<TParseContext, char>
+    public sealed class StringLiteral<TParseContext> : Parser<BufferSpan<char>, TParseContext, char>, ICompilable<TParseContext, char>, ISeekable<char>
     where TParseContext : ParseContextWithScanner<char>
     {
         private readonly StringLiteralQuotes _quotes;
@@ -23,6 +24,12 @@ namespace Parlot.Fluent.Char
         {
             _quotes = quotes;
         }
+
+        public bool CanSeek => true;
+
+        public char[] ExpectedChars => _quotes switch { StringLiteralQuotes.Single => new[] { '\'' }, StringLiteralQuotes.Double => new[] { '\"' }, StringLiteralQuotes.SingleOrDouble => new[] { '\'', '\"' }, _ => Array.Empty<char>() };
+
+        public bool SkipWhitespace => false;
 
         public override bool Parse(TParseContext context, ref ParseResult<BufferSpan<char>> result)
         {
@@ -118,7 +125,7 @@ namespace Parlot.Fluent.Char
 
             sb.Append(quoteChar);
 #if SUPPORTS_READONLYSPAN
-            sb.Append((ReadOnlySpan<char>)value.ToString()?.Replace("\\", "\\\\")?.Replace(quoteChar.ToString(), "\\" + quoteChar));
+            sb.Append(value.Span.ToString().Replace("\\", "\\\\")?.Replace(quoteChar.ToString(), "\\" + quoteChar));
 #else
             sb.Append(value.ToString()?.Replace("\\", "\\\\")?.Replace(quoteChar.ToString(), "\\" + quoteChar).ToCharArray());
 #endif

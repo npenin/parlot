@@ -30,15 +30,13 @@ namespace Parlot.Fluent.Char
             if (context.Scanner.ReadDecimal(_numberOptions, _culture.NumberFormat))
             {
                 var end = context.Scanner.Cursor.Offset;
-
-
-#if NETSTANDARD2_0
+#if !SUPPORTS_SPAN_PARSE
                 var sourceToParse = context.Scanner.Buffer.SubBuffer(start, end - start).ToString();
 #else
                 var sourceToParse = context.Scanner.Buffer.SubBuffer(start, end - start).Span;
 #endif
 
-                if (decimal.TryParse(sourceToParse, _numberOptions, _culture, out var value))
+                if (decimal.TryParse(sourceToParse, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
                 {
                     result.Set(start, end, value);
                     return true;

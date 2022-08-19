@@ -12,14 +12,16 @@ namespace Parlot
             Length = count;
         }
 
-#if SUPPORTS_READONLYSPAN
-        public BufferSpan(Span<T> buffer, int offset, int count)
+        public BufferSpan(Span<T> buffer, int offset = 0, int count = -1)
+        : this(buffer.ToArray(), offset, count == -1 ? buffer.Length : count)
         {
-            Buffer = buffer.ToArray();
-            Offset = offset;
-            Length = count;
         }
-#endif
+
+        public BufferSpan(ReadOnlySpan<T> buffer, int offset = 0, int count = -1)
+        : this(buffer.ToArray(), offset, count == -1 ? buffer.Length : count)
+        {
+        }
+
         public BufferSpan(T[] buffer)
         : this(buffer, 0, buffer?.Length ?? 0)
         {
@@ -45,9 +47,10 @@ namespace Parlot
         public readonly int Offset;
         public readonly T[] Buffer;
 
-#if SUPPORTS_READONLYSPAN
         public ReadOnlySpan<T> Span => Buffer == null ? ReadOnlySpan<T>.Empty : Buffer.AsSpan(Offset, Length);
-#endif
+
+        public ReadOnlySpan<T> AsSpan(int offset, int length) => Buffer == null ? ReadOnlySpan<T>.Empty : Buffer.AsSpan(Offset + offset, length);
+        public ReadOnlySpan<T> AsSpan(int offset) => AsSpan(offset, Length - offset);
 
         public override string ToString()
         {
@@ -67,72 +70,57 @@ namespace Parlot
                 return Buffer == null;
             }
 
-#if NETSTANDARD2_0
-            if (Length != other.Length)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < Length; i++)
-            {
-                if (!Buffer[Offset + i].Equals(other[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-#else
             return Span.SequenceEqual(other);
-#endif
         }
 
         public bool Equals(BufferSpan<T> other)
         {
-#if NETSTANDARD2_0
-            if (Length != other.Length)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < Length; i++)
-            {
-                if (!Buffer[Offset + i].Equals(other.Buffer[other.Offset + i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-#else
             return Span.SequenceEqual(other.Span);
-#endif
         }
 
-#if !NETSTANDARD2_0
         public static implicit operator BufferSpan<T>(Span<T> s)
         {
             return new BufferSpan<T>(s, 0, s.Length);
         }
-        public static implicit operator ReadOnlySpan<T>(BufferSpan<T> s)
+
+        public static implicit operator BufferSpan<T>(ReadOnlySpan<T> s)
         {
-            return s.Span;
+            return new BufferSpan<T>(s.ToArray());
         }
-#endif
+
         public static implicit operator BufferSpan<T>(T[] s)
         {
             return new BufferSpan<T>(s, 0, s.Length);
         }
 
-        public int IndexOf(T startChar, int startOffset = 0, int end = -1)
+        public int IndexOf(T lookup, int startOffset = 0, int end = -1)
         {
             // #if NETSTANDARD2_0
             if (end == -1 || end > Length)
                 end = Length;
-            for (var i = startOffset; i < end; i++)
+            for (var i = startOffset + Offset; i < end; i++)
             {
-                if (Buffer[Offset + i].Equals(startChar))
-                    return i;
+                if (Buffer[i].Equals(lookup))
+                    return i - startOffset;
+            }
+
+            return -1;
+            // #else
+            //             return Span.IndexOf(startChar, startOffset, end);
+            // #endif
+        }
+
+        public int IndexOfAny(params T[] startChar)
+        {
+            return IndexOfAny(0, startChar);
+        }
+        public int IndexOfAny(int offset, params T[] startChar)
+        {
+            // #if NETSTANDARD2_0
+            for (var i = Offset + offset; i < Length; i++)
+            {
+                if (Array.IndexOf(startChar, Buffer[i]) > -1)
+                    return i - offset;
             }
 
             return -1;

@@ -1,43 +1,41 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System.Linq.Expressions;
 
 namespace Parlot.Fluent.Char
 {
-    public sealed class SkipWhiteSpace<T, TParseContext> : Parser<T, TParseContext, char>, ICompilable<TParseContext, char>
+    public sealed class SkipWhiteSpace<T, TParseContext> : Parser<T, TParseContext, char>, ICompilable<TParseContext, char>, ISeekable<char>
     where TParseContext : ParseContextWithScanner<char>
     {
+
         private readonly Parser<T, TParseContext, char> _parser;
-        private readonly Parser<BufferSpan<char>, TParseContext, char> _whiteSpaceParser;
 
-        private static readonly bool canUseNewLines = typeof(StringParseContext).IsAssignableFrom(typeof(TParseContext));
+        internal static readonly bool canUseNewLines = typeof(StringParseContext).IsAssignableFrom(typeof(TParseContext));
 
-        public override bool Serializable => _parser.Serializable && (_whiteSpaceParser == null || _whiteSpaceParser.Serializable);
-        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue && (_whiteSpaceParser == null || _whiteSpaceParser.SerializableWithoutValue);
-
-        public SkipWhiteSpace(Parser<T, TParseContext, char> parser, Parser<BufferSpan<char>, TParseContext, char> whiteSpaceParser = null)
+        public SkipWhiteSpace(Parser<T, TParseContext, char> parser)
         {
             _parser = parser;
-            _whiteSpaceParser = whiteSpaceParser;
         }
+        public override bool Serializable => _parser.Serializable;
+        public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
+
+        public bool CanSeek => _parser is ISeekable<char> seekable && seekable.CanSeek;
+
+        public char[] ExpectedChars => _parser is ISeekable<char> seekable ? seekable.ExpectedChars : default;
+
+        public bool SkipWhitespace => true;
 
         public override bool Parse(TParseContext context, ref ParseResult<T> result)
         {
             context.EnterParser(this);
 
             var start = context.Scanner.Cursor.Position;
+
             // Use the scanner's logic to ignore whitespaces since it knows about multi-line grammars
-            if (_whiteSpaceParser is null)
-            {
-                if (!canUseNewLines || ((StringParseContext)(object)context).UseNewLines)
-                    context.Scanner.SkipWhiteSpace();
-                else
-                    context.Scanner.SkipWhiteSpaceOrNewLine();
-            }
+            if (!canUseNewLines || ((StringParseContext)(object)context).UseNewLines)
+                context.Scanner.SkipWhiteSpace();
             else
-            {
-                ParseResult<BufferSpan<char>> _ = new();
-                _whiteSpaceParser.Parse(context, ref _);
-            }
+                context.Scanner.SkipWhiteSpaceOrNewLine();
 
             if (_parser.Parse(context, ref result))
             {
@@ -45,6 +43,7 @@ namespace Parlot.Fluent.Char
             }
 
             context.Scanner.Cursor.ResetPosition(start);
+
             return false;
         }
 
@@ -59,15 +58,10 @@ namespace Parlot.Fluent.Char
 
             var parserCompileResult = _parser.Build(context);
 
-            if (_whiteSpaceParser is not null)
-            {
-                var whiteSpaceParserCompileResult = _whiteSpaceParser.Build(context);
-                result.Body.Add(Expression.Block(whiteSpaceParserCompileResult.Variables,
-                    whiteSpaceParserCompileResult.Body));
-
-                result.Body.Add(
-                    Expression.Block(
-                        parserCompileResult.Variables,
+            result.Body.Add(
+                Expression.Block(
+                    parserCompileResult.Variables,
+                    canUseNewLines ? Expression.IfThenElse(context.UseNewLines(), context.SkipWhiteSpace(), context.SkipWhiteSpaceOrNewLine()) : context.SkipWhiteSpace(),
                     Expression.Block(parserCompileResult.Body),
                     Expression.IfThenElse(
                         parserCompileResult.Success,
@@ -79,29 +73,6 @@ namespace Parlot.Fluent.Char
                         )
                     )
                 );
-            }
-            else
-            {
-
-                result.Body.Add(
-                    Expression.Block(
-                        parserCompileResult.Variables,
-                            // Use the scanner's logic to ignore whitespaces since it knows about multi-line grammars
-                            Expression.IfThenElse(Expression.Property(context.ParseContext, nameof(StringParseContext.UseNewLines)),
-                                context.SkipWhiteSpace(),
-                                context.SkipWhiteSpaceOrNewLine()),
-                    Expression.Block(parserCompileResult.Body),
-                    Expression.IfThenElse(
-                        parserCompileResult.Success,
-                        Expression.Block(
-                            context.DiscardResult ? Expression.Empty() : Expression.Assign(value, parserCompileResult.Value),
-                            Expression.Assign(success, Expression.Constant(true, typeof(bool)))
-                            ),
-                        context.ResetPosition(start)
-                        )
-                    )
-                );
-            }
 
             return result;
         }
@@ -109,12 +80,8 @@ namespace Parlot.Fluent.Char
         public override bool Serialize(BufferSpanBuilder<char> sb, T value)
         {
             if (sb.Length > 0)
-            {
-                if (_whiteSpaceParser is not null)
-                    _whiteSpaceParser.Serialize(sb, default);
-                else
-                    sb.Append(' ');
-            }
+                sb.Append(' ');
+
             return _parser.Serialize(sb, value);
 
         }

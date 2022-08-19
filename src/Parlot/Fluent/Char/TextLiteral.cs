@@ -1,18 +1,22 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Parlot.Fluent.Char
 {
-    public sealed class TextLiteral<TParseContext> : Parser<string, TParseContext, char>, ICompilable<TParseContext, char>
+    public sealed class TextLiteral<TParseContext> : Parser<string, TParseContext, char>, ICompilable<TParseContext, char>, ISeekable<char>
     where TParseContext : ParseContextWithScanner<char>
     {
-        private readonly StringComparer _comparer;
+        private readonly StringComparison _comparisonType;
+        private readonly bool _hasNewLines;
 
-        public TextLiteral(string text, StringComparer comparer = null)
+        public TextLiteral(string text, StringComparison comparisonType)
         {
             Text = text ?? throw new ArgumentNullException(nameof(text));
-            _comparer = comparer;
+            _comparisonType = comparisonType;
+            _hasNewLines = text.Any(x => Character.IsNewLine(x));
         }
 
         public string Text { get; }
@@ -20,15 +24,32 @@ namespace Parlot.Fluent.Char
         public override bool Serializable => true;
         public override bool SerializableWithoutValue => true;
 
+        public bool CanSeek => Text.Length > 0;
+
+        public char[] ExpectedChars => new[] { Text[0] };
+
+        public bool SkipWhitespace => false;
+
         public override bool Parse(TParseContext context, ref ParseResult<string> result)
         {
             context.EnterParser(this);
 
-            var start = context.Scanner.Cursor.Offset;
+            var cursor = context.Scanner.Cursor;
 
-            if (context.Scanner.ReadText(Text, _comparer))
+            if (cursor.Match(Text, _comparisonType))
             {
-                result.Set(start, context.Scanner.Cursor.Offset, Text);
+                var start = cursor.Offset;
+
+                if (_hasNewLines)
+                {
+                    cursor.Advance(Text.Length);
+                }
+                else
+                {
+                    cursor.AdvanceNoNewLines(Text.Length);
+                }
+
+                result.Set(start, cursor.Offset, Text);
                 return true;
             }
 
@@ -57,10 +78,10 @@ namespace Parlot.Fluent.Char
             var ifReadText = Expression.IfThen(
                 Expression.Call(
 null,
-                    ExpressionHelper<TParseContext>.Scanner_ReadText_NoResult,
+                    ExpressionHelper.Scanner_ReadText_NoResult,
                     context.Scanner(),
                     Expression.Constant(Text, typeof(string)),
-                    Expression.Constant(_comparer, typeof(StringComparer))
+                    Expression.Constant(_comparisonType, typeof(StringComparison))
                     ),
                 Expression.Block(
                     Expression.Assign(success, Expression.Constant(true, typeof(bool))),
@@ -77,10 +98,10 @@ null,
 
         public override bool Serialize(BufferSpanBuilder<char> sb, string value)
         {
-            if (value == null || (_comparer != null && _comparer.Equals(value, Text)) || (_comparer == null && value == Text))
+            if (value == null || value.Equals(Text, _comparisonType))
             {
 #if SUPPORTS_READONLYSPAN
-                sb.Append((ReadOnlySpan<char>)Text);
+                sb.Append(Text.AsSpan());
 #else
                 sb.Append(Text.ToCharArray());
 #endif

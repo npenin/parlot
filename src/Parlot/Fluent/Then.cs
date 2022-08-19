@@ -1,4 +1,5 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -14,7 +15,7 @@ namespace Parlot.Fluent
     /// <typeparam name="U">The output parser type.</typeparam>
     /// <typeparam name="TParseContext">The parse context type.</typeparam>
     /// <typeparam name="TChar">The char type.</typeparam>
-    public sealed class ThenWithScanner<T, U, TParseContext, TChar> : Parser<U, TParseContext, TChar>, ICompilable<TParseContext>
+    public sealed class Then<T, U, TParseContext, TChar> : Parser<U, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISeekable<TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -24,34 +25,40 @@ namespace Parlot.Fluent
         private readonly Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> _transformBack2;
         private readonly Parser<T, TParseContext, TChar> _parser;
 
+        public bool CanSeek => _parser is ISeekable<TChar> seekable && seekable.CanSeek;
+
+        public TChar[] ExpectedChars => _parser is ISeekable<TChar> seekable ? seekable.ExpectedChars : default;
+
+        public bool SkipWhitespace => _parser is ISeekable<TChar> seekable && seekable.SkipWhitespace;
+
         public override bool Serializable => (_transform1 != null && _transformBack1 != null || _transform2 != null && _transformBack2 != null || _transform1 == null && _transform2 == null) && _parser.Serializable;
         public override bool SerializableWithoutValue => _transform1 == null && _transform2 == null && _parser.SerializableWithoutValue;
 
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser)
+        public Then(Parser<T, TParseContext, TChar> parser)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
 
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser, Func<T, U> action, Func<U, T> reverseAction)
+        public Then(Parser<T, TParseContext, TChar> parser, Func<T, U> action, Func<U, T> reverseAction)
         {
             _transform1 = action ?? throw new ArgumentNullException(nameof(action));
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _transformBack1 = reverseAction;
         }
 
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser, Func<T, U> action, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> reverseAction)
+        public Then(Parser<T, TParseContext, TChar> parser, Func<T, U> action, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> reverseAction)
         {
             _transform1 = action ?? throw new ArgumentNullException(nameof(action));
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _transformBack2 = reverseAction;
         }
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser, Func<TParseContext, T, U> action, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> reverseAction)
+        public Then(Parser<T, TParseContext, TChar> parser, Func<TParseContext, T, U> action, Func<BufferSpanBuilder<TChar>, U, Parser<T, TParseContext, TChar>, bool> reverseAction)
         {
             _transform2 = action ?? throw new ArgumentNullException(nameof(action));
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _transformBack2 = reverseAction;
         }
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser, Func<TParseContext, T, U> action, Func<U, T> reverseAction)
+        public Then(Parser<T, TParseContext, TChar> parser, Func<TParseContext, T, U> action, Func<U, T> reverseAction)
         {
             _transform2 = action ?? throw new ArgumentNullException(nameof(action));
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
@@ -81,7 +88,7 @@ namespace Parlot.Fluent
             return false;
         }
 
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
+        public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             var result = new CompilationResult();
 
@@ -152,7 +159,7 @@ namespace Parlot.Fluent
     /// <typeparam name="T">The input parser type.</typeparam>
     /// <typeparam name="TParseContext">The parse context type.</typeparam>
     /// <typeparam name="TChar">The char type.</typeparam>
-    public sealed class ThenWithScanner<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext>
+    public sealed class Then<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -163,18 +170,18 @@ namespace Parlot.Fluent
         public override bool Serializable => _parser.Serializable;
         public override bool SerializableWithoutValue => _parser.SerializableWithoutValue;
 
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser)
+        public Then(Parser<T, TParseContext, TChar> parser)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
 
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser, Action<T> action)
+        public Then(Parser<T, TParseContext, TChar> parser, Action<T> action)
         {
             _action1 = action ?? throw new ArgumentNullException(nameof(action));
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
 
-        public ThenWithScanner(Parser<T, TParseContext, TChar> parser, Action<TParseContext, T> action)
+        public Then(Parser<T, TParseContext, TChar> parser, Action<TParseContext, T> action)
         {
             _action2 = action ?? throw new ArgumentNullException(nameof(action));
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
@@ -202,7 +209,7 @@ namespace Parlot.Fluent
         }
 
 
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
+        public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             var result = new CompilationResult();
 

@@ -36,21 +36,44 @@ namespace Parlot
         public TextPosition Position => new(_offset, _line, _column);
 
         /// <summary>
-        /// Advances the cursor.
+        /// Advances the cursor by one character.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Advance()
         {
-            if (!Eof)
+            _offset++;
+
+            if (_offset >= _textLength)
             {
-                AdvanceOnce();
+                Eof = true;
+                _column++;
+                _current = NullChar;
+                return;
             }
+
+            var next = _buffer[_offset];
+            if (IsChar)
+            {
+                var currentAsChar = _current.ToChar(null);
+                if (_current.ToChar(null) == '\n')
+                {
+                    _line++;
+                    _column = 1;
+                }
+                else if (next.ToChar(null) != '\r')
+                {
+                    _column++;
+                }
+            }
+            // if c == '\r', don't increase the column count
+
+            _current = next;
+
         }
 
         /// <summary>
         /// Advances the cursor.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Advance(int count)
         {
             if (Eof)
@@ -58,48 +81,66 @@ namespace Parlot
                 return;
             }
 
-            do
-            {
-                if (!AdvanceOnce())
-                {
-                    count = 0;
-                }
-                count--;
-            } while (count > 0);
-        }
+            var maxOffset = _offset + count;
 
-        internal bool AdvanceOnce()
-        {
-            this._offset = _offset + 1;
-
-            if (_offset >= _textLength)
+            // Detect if the cursor will be over Eof
+            if (maxOffset > _textLength - 1)
             {
                 Eof = true;
-                _column++;
+                maxOffset = _textLength - 1;
+            }
+
+            while (_offset < maxOffset)
+            {
+                _offset++;
+
+                var next = _buffer[_offset];
+
+                if (IsChar)
+                {
+                    if (_current.ToChar(null) == '\n')
+                    {
+                        _line++;
+                        _column = 1;
+                    }
+                    // if c == '\r', don't increase the column count
+                    else if (next.ToChar(null) != '\r')
+                    {
+                        _column++;
+                    }
+                }
+
+                _current = next;
+            }
+
+            if (Eof)
+            {
+                _current = NullChar;
+                _offset = _textLength;
+                _column += 1;
+            }
+
+        }
+
+        /// <summary>
+        /// Advances the cursor with the knowledge there are no new lines.
+        /// </summary>
+        public bool AdvanceNoNewLines(int offset)
+        {
+            var newOffset = _offset + offset;
+
+            // Detect if the cursor will be over Eof
+            if (newOffset > _textLength - 1)
+            {
+                Eof = true;
+                _offset = _textLength;
                 _current = NullChar;
                 return false;
             }
 
-            var c = PeekNext(0);
+            _current = _buffer[newOffset];
+            _offset = newOffset;
 
-            if (IsChar)
-            {
-                var currentAsChar = _current.ToChar(null);
-                // most probable first 
-                if (currentAsChar != '\n' && c.ToChar(null) != '\r')
-                {
-                    _column++;
-                }
-                else if (currentAsChar == '\n')
-                {
-                    _line++;
-                    _column = 1;
-                }
-            }
-
-            // if c == '\r', don't increase the column count
-
-            _current = c;
             return true;
         }
 
@@ -169,11 +210,6 @@ namespace Parlot
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Match(TChar c)
         {
-            if (Eof)
-            {
-                return false;
-            }
-
             // Ordinal comparison
             return _current.Equals(c);
         }
@@ -182,7 +218,7 @@ namespace Parlot
         /// Whether any char of the string is at the current position.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MatchAnyOf(TChar[] s)
+        public bool MatchAnyOf(ReadOnlySpan<TChar> s)
         {
             if (s == null)
             {
@@ -249,7 +285,7 @@ namespace Parlot
         /// <summary>
         /// Whether a string is at the current position.
         /// </summary>
-        public bool Match(TChar[] s)
+        public bool Match(ReadOnlySpan<TChar> s)
         {
             if (s.Length == 0)
             {
@@ -281,105 +317,6 @@ namespace Parlot
             for (var i = 2; i < length; i++)
             {
                 if (!s[i].Equals(PeekNext(i)))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Whether a string is at the current position.
-        /// </summary>
-        public bool Match(string s)
-        {
-            if (s.Length == 0)
-            {
-                return true;
-            }
-
-            if (Eof || !IsChar)
-            {
-                return false;
-            }
-
-            if (!s[0].Equals(_current))
-            {
-                return false;
-            }
-
-            var length = s.Length;
-
-            if (_offset + length - 1 >= _textLength)
-            {
-                return false;
-            }
-
-            if (length > 1 && !PeekNext(1).Equals(s[1]))
-            {
-                return false;
-            }
-
-            for (var i = 2; i < length; i++)
-            {
-                if (!s[i].Equals(PeekNext(i)))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Whether a string is at the current position.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Match(string s, StringComparer comparer)
-        {
-            if (s.Length == 0)
-            {
-                return true;
-            }
-
-            if (Eof || !IsChar)
-            {
-                return false;
-            }
-
-            var a = CharToStringTable.GetString(_current.ToChar(null));
-            var b = CharToStringTable.GetString(s[0]);
-
-            if (comparer.Compare(a, b) != 0)
-            {
-                return false;
-            }
-
-            var length = s.Length;
-
-            if (_offset + length - 1 >= _textLength)
-            {
-                return false;
-            }
-
-            if (length > 1)
-            {
-                a = CharToStringTable.GetString(PeekNext(1).ToChar(null));
-                b = CharToStringTable.GetString(s[1]);
-
-                if (comparer.Compare(a, b) != 0)
-                {
-                    return false;
-                }
-            }
-
-            for (var i = 2; i < length; i++)
-            {
-                a = CharToStringTable.GetString(PeekNext(i).ToChar(null));
-                b = CharToStringTable.GetString(s[i]);
-
-                if (comparer.Compare(a, b) != 0)
                 {
                     return false;
                 }

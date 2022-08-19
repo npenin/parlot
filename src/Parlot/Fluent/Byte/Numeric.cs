@@ -66,7 +66,7 @@ namespace Parlot.Fluent.Byte
 
             if (context.Scanner.ReadN(size, out var buffer))
             {
-                result.Set(start, context.Scanner.Cursor.Position.Offset, convert(buffer));
+                result.Set(start, context.Scanner.Cursor.Position.Offset, convert(buffer.GetBuffer()));
                 return true;
             }
 

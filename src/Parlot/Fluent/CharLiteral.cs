@@ -1,11 +1,12 @@
 ﻿using Parlot.Compilation;
 using System;
+using Parlot.Rewriting;
 using System.Linq.Expressions;
 using System.Text;
 
 namespace Parlot.Fluent
 {
-    public sealed class CharLiteral<TChar, TParseContext> : Parser<TChar, TParseContext, TChar>, ICompilable<TParseContext, TChar>
+    public sealed class CharLiteral<TChar, TParseContext> : Parser<TChar, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISeekable<TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -19,15 +20,22 @@ namespace Parlot.Fluent
         public override bool Serializable => true;
         public override bool SerializableWithoutValue => true;
 
+        public bool CanSeek => true;
+
+        public TChar[] ExpectedChars => new[] { Char };
+
+        public bool SkipWhitespace => false;
+
         public override bool Parse(TParseContext context, ref ParseResult<TChar> result)
         {
             context.EnterParser(this);
 
-            var start = context.Scanner.Cursor.Offset;
-
-            if (context.Scanner.ReadChar(Char))
+            var cursor = context.Scanner.Cursor;
+            if (cursor.Match(Char))
             {
-                result.Set(start, context.Scanner.Cursor.Offset, Char);
+                var start = cursor.Offset;
+                cursor.Advance();
+                result.Set(start, cursor.Offset, Char);
                 return true;
             }
 

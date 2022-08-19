@@ -1,16 +1,17 @@
 ﻿namespace Parlot.Fluent
 {
-    using System;
+    using System.Threading;
 
-    public static class ParserExtensions
+    public abstract partial class Parser<T, TParseContext, TChar>
     {
-        public static T Parse<T, TParseContext, TChar>(this Parser<T, TParseContext, TChar> parser, TParseContext context)
-        where TParseContext : ParseContextWithScanner<TChar>
-        where TChar : IConvertible, IEquatable<TChar>
+        private int _invocations = 0;
+        private volatile Parser<T, TParseContext, TChar> _compiledParser;
+
+        public T Parse(TParseContext context)
         {
             var localResult = new ParseResult<T>();
 
-            var success = parser.Parse(context, ref localResult);
+            var success = CheckCompiled(context).Parse(context, ref localResult);
 
             if (success)
             {
@@ -20,38 +21,35 @@
             return default;
         }
 
-        public static T Parse<T>(this Parser<T, StringParseContext, char> parser, string text)
+        private Parser<T, TParseContext, TChar> CheckCompiled(TParseContext context)
         {
-            return parser.Parse(new StringParseContext(new Scanner<char>(text.ToCharArray())));
+            if (_compiledParser != null || context.CompilationThreshold == 0)
+            {
+                return _compiledParser ?? this;
+            }
+
+            // Only the thread that reaches CompilationThreshold compiles the parser.
+            // Any other concurrent call here will return 'this'. This prevents multiple compilations of 
+            // the same parser, and a lock.
+
+            if (Interlocked.Increment(ref _invocations) == context.CompilationThreshold)
+            {
+                return _compiledParser = this.Compile();
+            }
+
+            return this;
         }
 
-        public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value)
-        {
-            return parser.TryParse(text, out value, out _);
-        }
 
-        public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value, out ParseError error)
-        {
-            return TryParse(parser, new StringParseContext(new Scanner<char>(text.ToCharArray())), out value, out error);
-        }
-
-        public static bool TryParse<TResult, TParseContext>(this Parser<TResult, TParseContext> parser, TParseContext context, out TResult value)
-        where TParseContext : ParseContext
-        {
-            return TryParse(parser, context, out value, out _);
-        }
-
-
-        public static bool TryParse<TResult, TParseContext>(this Parser<TResult, TParseContext> parser, TParseContext context, out TResult value, out ParseError error)
-        where TParseContext : ParseContext
+        public bool TryParse(TParseContext context, out T value, out ParseError error)
         {
             error = null;
 
             try
             {
-                var localResult = new ParseResult<TResult>();
+                var localResult = new ParseResult<T>();
 
-                var success = parser.Parse(context, ref localResult);
+                var success = CheckCompiled(context).Parse(context, ref localResult);
 
                 if (success)
                 {
@@ -70,6 +68,37 @@
 
             value = default;
             return false;
+        }
+    }
+}
+
+
+namespace Parlot.Fluent
+{
+    using System;
+
+    public static class ParserExtensions
+    {
+        public static T Parse<T>(this Parser<T, StringParseContext, char> parser, string text)
+        {
+            return parser.Parse(new StringParseContext(new Scanner<char>(text.AsSpan())));
+        }
+
+        public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value)
+        {
+            return parser.TryParse(text, out value, out _);
+        }
+
+        public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value, out ParseError error)
+        {
+            return parser.TryParse(new StringParseContext(new Scanner<char>(text.AsSpan())), out value, out error);
+        }
+
+        public static bool TryParse<TResult, TParseContext, TChar>(this Parser<TResult, TParseContext, TChar> parser, TParseContext context, out TResult value)
+        where TParseContext : ParseContextWithScanner<TChar>
+        where TChar : IEquatable<TChar>, IConvertible
+        {
+            return parser.TryParse(context, out value, out _);
         }
     }
 }

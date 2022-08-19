@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Parlot.Fluent
 {
-    public sealed class Deferred<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext>
+    public sealed class Deferred<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -37,7 +37,7 @@ namespace Parlot.Fluent
             public object Func;
         }
 
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
+        public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             if (Parser == null)
             {
@@ -109,7 +109,11 @@ namespace Parlot.Fluent
             // value = def.Item2;
 
             result.Body.Add(Expression.Assign(success, Expression.Field(deferred, "Item1")));
-            result.Body.Add(Expression.Assign(value, Expression.Field(deferred, "Item2")));
+            result.Body.Add(
+                context.DiscardResult
+                            ? Expression.Empty()
+                            : Expression.Assign(value, Expression.Field(deferred, "Item2"))
+            );
 
             return result;
         }

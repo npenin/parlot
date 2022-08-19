@@ -21,7 +21,6 @@ namespace Parlot
         {
         }
 
-#if SUPPORTS_READONLYSPAN
         public void Append(Span<T> s)
         {
             Append((BufferSpan<T>)s);
@@ -31,7 +30,6 @@ namespace Parlot
         {
             Append(s.ToArray());
         }
-#endif
 
         public void Append(BufferSpan<T> s)
         {
@@ -75,11 +73,7 @@ namespace Parlot
 
         public void Append(string s)
         {
-#if NETSTANDARD2_0
-            base.Append(s.ToCharArray());
-#else
             base.Append(s.AsSpan());
-#endif
         }
 
         public override void Append(int s)

@@ -87,7 +87,9 @@ namespace Parlot.Fluent.Char
                             Expression.NotEqual(start, end),
                             Expression.Block(
                                 Expression.Assign(success, Expression.Constant(true, typeof(bool))),
-                                Expression.Assign(value, context.SubBufferSpan(start, Expression.Subtract(end, start))
+                                context.DiscardResult
+                                    ? Expression.Empty()
+                                    : Expression.Assign(value, context.SubBufferSpan(start, Expression.Subtract(end, start))
                                 )
                             )
                     )))

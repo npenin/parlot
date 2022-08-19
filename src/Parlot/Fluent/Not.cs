@@ -9,12 +9,12 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
-        private readonly Parser<T, TParseContext> _parser;
+        private readonly Parser<T, TParseContext, TChar> _parser;
 
         public override bool Serializable => true;
         public override bool SerializableWithoutValue => true;
 
-        public Not(Parser<T, TParseContext> parser)
+        public Not(Parser<T, TParseContext, TChar> parser)
         {
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
@@ -43,7 +43,7 @@ namespace Parlot.Fluent
 
             // var start = context.Scanner.Cursor.Position;
 
-            var start = context.Position();
+            var start = context.DeclarePositionVariable(result);
 
             var parserCompileResult = _parser.Build(context);
 

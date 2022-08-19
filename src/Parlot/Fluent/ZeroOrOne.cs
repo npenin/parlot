@@ -1,12 +1,12 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
 namespace Parlot.Fluent
 {
-    public sealed class ZeroOrOne<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext>
+    public sealed class ZeroOrOne<T, TParseContext, TChar> : Parser<T, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISeekable<TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -20,6 +20,12 @@ namespace Parlot.Fluent
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
 
+        public bool CanSeek => _parser is ISeekable<TChar> seekable && seekable.CanSeek;
+
+        public TChar[] ExpectedChars => _parser is ISeekable<TChar> seekable ? seekable.ExpectedChars : default;
+
+        public bool SkipWhitespace => _parser is ISeekable<TChar> seekable && seekable.SkipWhitespace;
+
         public override bool Parse(TParseContext context, ref ParseResult<T> result)
         {
             context.EnterParser(this);
@@ -29,7 +35,7 @@ namespace Parlot.Fluent
             return true;
         }
 
-        public CompilationResult Compile(CompilationContext<TParseContext> context)
+        public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             var result = new CompilationResult();
 

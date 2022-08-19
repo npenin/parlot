@@ -1,4 +1,5 @@
 ﻿using Parlot.Compilation;
+using Parlot.Rewriting;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace Parlot.Fluent
 {
-    public sealed class Separated<U, T, TParseContext, TChar> : Parser<List<T>, TParseContext, TChar>, ICompilable<TParseContext, TChar>
+    public sealed class Separated<U, T, TParseContext, TChar> : Parser<List<T>, TParseContext, TChar>, ICompilable<TParseContext, TChar>, ISeekable<TChar>
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
@@ -22,6 +23,12 @@ namespace Parlot.Fluent
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         }
 
+        public bool CanSeek => _parser is ISeekable<TChar> seekable && seekable.CanSeek;
+
+        public TChar[] ExpectedChars => _parser is ISeekable<TChar> seekable ? seekable.ExpectedChars : default;
+
+        public bool SkipWhitespace => _parser is ISeekable<TChar> seekable && seekable.SkipWhitespace;
+
         public override bool Parse(TParseContext context, ref ParseResult<List<T>> result)
         {
             context.EnterParser(this);
@@ -29,7 +36,7 @@ namespace Parlot.Fluent
             List<T> results = null;
 
             var start = 0;
-            var end = 0;
+            var end = context.Scanner.Cursor.Position;
 
             var first = true;
             var parsed = new ParseResult<T>();
@@ -37,34 +44,42 @@ namespace Parlot.Fluent
 
             while (true)
             {
+                if (!first)
+                {
+                    if (!_separator.Parse(context, ref separatorResult))
+                    {
+                        break;
+                    }
+                }
+
                 if (!_parser.Parse(context, ref parsed))
                 {
                     if (!first)
                     {
+                        // A separator was found, but not followed by another value.
+                        // It's still succesful if there was one value parsed, but we reset the cursor to before the separator
+                        context.Scanner.Cursor.ResetPosition(end);
                         break;
                     }
 
-                    // A parser that returns false is reponsible for resetting the position.
-                    // Nothing to do here since the inner parser is already failing and resetting it.
                     return false;
+                }
+                else
+                {
+                    end = context.Scanner.Cursor.Position;
                 }
 
                 if (first)
                 {
+                    results = new List<T>();
                     start = parsed.Start;
+                    first = false;
                 }
 
-                end = parsed.End;
-                results ??= new List<T>();
                 results.Add(parsed.Value);
-
-                if (!_separator.Parse(context, ref separatorResult))
-                {
-                    break;
-                }
             }
 
-            result = new ParseResult<List<T>>(start, end, results);
+            result = new ParseResult<List<T>>(start, end.Offset, results);
             return true;
         }
 
@@ -74,6 +89,8 @@ namespace Parlot.Fluent
 
             var success = context.DeclareSuccessVariable(result, false);
             var value = context.DeclareValueVariable(result, Expression.New(typeof(List<T>)));
+
+            var end = context.DeclarePositionVariable(result);
 
             // value = new List<T>();
             //
@@ -85,6 +102,7 @@ namespace Parlot.Fluent
             //   {
             //      success = true;
             //      value.Add(parse1.Value);
+            //      end = currenPosition;
             //   }
             //   else
             //   {
@@ -98,6 +116,8 @@ namespace Parlot.Fluent
             //      break;
             //   }
             // }
+            // 
+            // resetPosition(end);
             // 
 
             var parserCompileResult = _parser.Build(context);
@@ -116,7 +136,8 @@ namespace Parlot.Fluent
                                 context.DiscardResult
                                 ? Expression.Empty()
                                 : Expression.Call(value, typeof(List<T>).GetMethod("Add"), parserCompileResult.Value),
-                                Expression.Assign(success, Expression.Constant(true))
+                                Expression.Assign(success, Expression.Constant(true)),
+                                Expression.Assign(end, context.Position())
                                 ),
                             Expression.Break(breakLabel)
                             ),
@@ -133,7 +154,8 @@ namespace Parlot.Fluent
                             Expression.Break(breakLabel)
                             )
                         ),
-                    breakLabel)
+                    breakLabel),
+                context.ResetPosition(end)
                 );
 
             result.Body.Add(block);

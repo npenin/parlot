@@ -32,7 +32,7 @@ namespace Parlot.Fluent.Byte
             {
                 if (context.Scanner.ReadN(lengthResult.Value, out var buffer))
                 {
-                    result.Set(lengthResult.Start, context.Scanner.Cursor.Position.Offset, encoding.GetString(buffer.ToArray()));
+                    result.Set(lengthResult.Start, context.Scanner.Cursor.Position.Offset, encoding.GetString(buffer.GetBuffer().ToArray()));
                     return true;
                 }
             }

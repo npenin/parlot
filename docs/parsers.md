@@ -438,7 +438,7 @@ null // success
 
 ### Separated
 
-Matches all occurrences of a parser that are separated by another one.
+Matches all occurrences of a parser that are separated by another one. If a separator is not followed by a value, it is not consumed.
 
 ```
 Parser<List<T>> Separated<U, T>(Parser<U> separator, Parser<T> parser)
@@ -619,7 +619,7 @@ Point { x: 1, y: 2}
 
 ### ElseError
 
-Fails parsing with a custom error message.
+Fails parsing with a custom error message when the inner parser didn't match.
 
 ```c#
 Parser<T> ElseError(string message)
@@ -645,12 +645,29 @@ failure: "Expected an integer at (1:3)
 
 ### Error
 
+Fails parsing with a custom error message when the inner parser matched.
+
 ```c#
 Parser<T> Error(string message)
 Parser<U> Error<U>(string message)
 ```
 
+Usage:
 
+```c#
+var parser = 
+    Terms.Char('a')
+    .Or(Terms.Char('b')
+    .Or(Terms.Char('c').Error("Unexpected char c")
+
+parser.Parse("1,");
+```
+
+Result:
+
+```
+failure: "Expected an integer at (1:3)
+```
 ### When
 
 Adds some additional logic for a parser to succeed.

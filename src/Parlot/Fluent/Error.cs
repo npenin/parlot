@@ -42,13 +42,16 @@ namespace Parlot.Fluent
             var value = context.DeclareValueVariable(result, Expression.Default(typeof(T)));
 
             // parse1 instructions
+            // success = true
             // 
-            // if (!parser1.Success)
+            // if (parser1.Success)
+            // {
+            //   value = parser1.Value
+            // }
+            // else
             // {
             //    throw new ParseException(_message, context.Scanner.Cursor.Position);
             // }
-            // 
-            // value = parser1.Value
             //
 
             var parserCompileResult = _parser.Build(context, requireResult: true);
@@ -56,16 +59,20 @@ namespace Parlot.Fluent
             var block = Expression.Block(
                 parserCompileResult.Variables,
                 parserCompileResult.Body
-                    .Append(
-                        Expression.IfThen(
-                            Expression.Not(parserCompileResult.Success),
-                            context.ThrowParseException(Expression.Constant(_message))
-                        )
-                    ).Append(
-                        context.DiscardResult
+                .Append(
+                    context.DiscardResult
                             ? Expression.Empty()
-                            : Expression.Assign(value, parserCompileResult.Value)
-                    )
+                            : Expression.Assign(value, parserCompileResult.Value))
+                    .Append(
+                        Expression.IfThenElse(
+                            parserCompileResult.Success,
+                            context.DiscardResult
+                                ? Expression.Empty()
+                                : Expression.Assign(value, parserCompileResult.Value),
+                            context.ThrowParseException(Expression.Constant(_message))
+
+
+                    ))
             );
 
             result.Body.Add(block);
@@ -111,18 +118,19 @@ namespace Parlot.Fluent
         {
             var result = new CompilationResult();
 
-            _ = context.DeclareSuccessVariable(result, true);
-            var value = context.DeclareValueVariable(result, Expression.Default(typeof(T)));
+            _ = context.DeclareSuccessVariable(result, false);
+            _ = context.DeclareValueVariable(result, Expression.Default(typeof(T)));
 
             // parse1 instructions
-            // 
+            // success = false;
+            //
             // if (parser1.Success)
             // {
             //    value = parser1.Value;
             //    throw new ParseException(_message, context.Scanner.Cursor.Position);
             // }
 
-            var parserCompileResult = _parser.Build(context, requireResult: true);
+            var parserCompileResult = _parser.Build(context, requireResult: false);
 
             var block = Expression.Block(
                 parserCompileResult.Variables,
@@ -130,12 +138,7 @@ namespace Parlot.Fluent
                     .Append(
                         Expression.IfThen(
                             parserCompileResult.Success,
-                            Expression.Block(
-                                context.DiscardResult
-                                    ? Expression.Empty()
-                                    : Expression.Assign(value, parserCompileResult.Value),
-                                context.ThrowParseException(Expression.Constant(_message))
-                            )
+                            context.ThrowParseException(Expression.Constant(_message))
                         )
                     )
             );
@@ -178,24 +181,25 @@ namespace Parlot.Fluent
                 throw new ParseException(_message, context.Scanner.Cursor.Position);
             }
 
-            return true;
+            return false;
         }
 
         public CompilationResult Compile(CompilationContext<TParseContext, TChar> context)
         {
             var result = new CompilationResult();
 
-            _ = context.DeclareSuccessVariable(result, true);
+            _ = context.DeclareSuccessVariable(result, false);
             _ = context.DeclareValueVariable(result, Expression.Default(typeof(U)));
 
             // parse1 instructions
+            // success = false;
             // 
             // if (parser1.Success)
             // {
             //    throw new ParseException(_message, context.Scanner.Cursor.Position);
             // }
 
-            var parserCompileResult = _parser.Build(context, requireResult: true);
+            var parserCompileResult = _parser.Build(context, requireResult: false);
 
             var block = Expression.Block(
                 parserCompileResult.Variables,

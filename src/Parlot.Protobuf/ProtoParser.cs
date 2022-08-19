@@ -30,7 +30,7 @@ public class ProtoParser
             .Or(Terms.Identifier().Then(t => t.ToString()))
             )
         .And(Terms.Identifier().ElseError("bad identifier"))
-        .AndSkip(Terms.Char('=').ElseError("missing equals"))
+        .AndSkip(Terms.Char('=').ElseError("missing equals on property definition"))
         .And(Terms.Integer().When(t => t >= 0).ElseError("bad index")).Then(t => new Property
         {
             Repeated = t.Item1 == "repeated",

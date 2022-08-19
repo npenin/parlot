@@ -29,7 +29,7 @@ namespace Parlot.Fluent.Char
             {
                 var end = context.Scanner.Cursor.Offset;
 
-#if NETSTANDARD2_0
+#if !SUPPORTS_SPAN_PARSE
                 var sourceToParse = context.Scanner.Buffer.SubBuffer(start, end - start).ToString();
 #else
                 var sourceToParse = context.Scanner.Buffer.SubBuffer(start, end - start).Span;

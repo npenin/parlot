@@ -1,5 +1,7 @@
 namespace Parlot.Fluent
 {
+    using System;
+
     public class StringParseContext : ParseContextWithScanner<char>
     {
         /// <summary>
@@ -18,7 +20,7 @@ namespace Parlot.Fluent
         }
 
         public StringParseContext(string text, bool useNewLines = false)
-        : this(new Scanner<char>(text.ToCharArray()), useNewLines)
+        : this(new Scanner<char>(text.AsSpan()), useNewLines)
         {
         }
 
