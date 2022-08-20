@@ -9,8 +9,8 @@ namespace Parlot.Fluent
     {
         protected TParseContext parent;
 
-        public ScopeParseContext(TParseContext context)
-        : this(context.Scanner)
+        public ScopeParseContext(TParseContext context, Scanner<TChar> newScanner = null)
+        : this(newScanner ?? context.Scanner)
         {
             OnEnterParser = context.OnEnterParser;
             parent = context;
@@ -21,6 +21,6 @@ namespace Parlot.Fluent
         {
         }
 
-        public abstract TParseContext Scope();
+        public abstract TParseContext Scope(BufferSpan<TChar> subBuffer = default);
     }
 }

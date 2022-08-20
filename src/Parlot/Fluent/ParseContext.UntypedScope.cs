@@ -5,7 +5,8 @@ namespace Parlot.Fluent
 {
     public partial class ParseContext
     {
-        public class Untyped : ScopeParseContext<char, Untyped>
+        public class Untyped<TChar> : ScopeParseContext<TChar, Untyped<TChar>>
+            where TChar : IConvertible, IEquatable<TChar>
         {
             IDictionary<string, object> scope;
 
@@ -35,24 +36,26 @@ namespace Parlot.Fluent
                 return parent.Get<T>(name);
             }
 
-            protected Untyped(Untyped context)
-            : base(context)
+            protected Untyped(Untyped<TChar> context, Scanner<TChar> newScanner = null)
+            : base(context, newScanner)
             {
             }
 
-            public Untyped(Scanner<char> scanner, bool useNewLines = false)
+            public Untyped(Scanner<TChar> scanner, bool useNewLines = false)
             : base(scanner, useNewLines)
             {
             }
 
-            public override Untyped Scope()
+            public override Untyped<TChar> Scope(BufferSpan<TChar> subBuffer = default)
             {
-                return new Untyped(this);
+                if (subBuffer.Equals(null))
+                    return new Untyped<TChar>(this);
+                return new Untyped<TChar>(this, new Scanner<TChar>(subBuffer));
             }
 
-            public static Untyped Scan(Scanner<char> scanner, bool useNewLines = false)
+            public static Untyped<TChar> Scan(Scanner<TChar> scanner, bool useNewLines = false)
             {
-                return new Untyped(scanner, useNewLines);
+                return new Untyped<TChar>(scanner, useNewLines);
             }
         }
     }

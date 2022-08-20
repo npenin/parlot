@@ -4,9 +4,9 @@ using Parlot.Fluent;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ParseContext = Fluent.ParseContextWithScanner<byte>;
-using Parsers = Parlot.Fluent.Parsers<Fluent.ParseContextWithScanner<byte>, byte>;
-using static Parlot.Fluent.Byte.Parsers<Fluent.ParseContextWithScanner<byte>>;
+using ParseContext = Parlot.Fluent.Byte.ParseContext;
+using Parsers = Parlot.Fluent.Parsers<Parlot.Fluent.Byte.ParseContext, byte>;
+using static Parlot.Fluent.Byte.Parsers<Parlot.Fluent.Byte.ParseContext>;
 
 public class Protocol
 {
@@ -35,11 +35,11 @@ public class Protocol
                 return Double().Then(v => new ParsedValue { Definition = p, Value = v });
             case TypeCode.Float:
                 return Float().Then(v => new ParsedValue { Definition = p, Value = v });
-            case TypeCode.Int32:
-            case TypeCode.Int64:
             case TypeCode.SInt32:
             case TypeCode.SInt64:
                 return new VarInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v });
+            case TypeCode.Int32:
+            case TypeCode.Int64:
             case TypeCode.UInt32:
             case TypeCode.UInt64:
                 return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v });
@@ -61,7 +61,7 @@ public class Protocol
             case TypeCode.Declaration:
                 if (p.Declaration is Enum<uint>)
                     return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v });
-                return parsers[p.Type].Then(v => new ParsedValue { Definition = p, MessageValue = v });
+                return Sub(new VarUInt<ParseContext>(), parsers[p.Type]).Then(v => new ParsedValue { Definition = p, MessageValue = v });
             default:
                 throw new NotSupportedException();
         }

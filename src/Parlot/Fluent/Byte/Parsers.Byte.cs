@@ -181,6 +181,13 @@ namespace Parlot.Fluent.Byte
         public static Parser<BufferSpan<byte>, TParseContext, byte> Buffer(Parser<ulong, TParseContext, byte> length) => new Byte.CaptureWithPrefixedLength<TParseContext, byte>(length);
 
         /// <summary>
+        /// Builds a parser that parses unsigned long (64 bits).
+        /// </summary>
+        public static Parser<T, TParseContext2, byte> Sub<T, TParseContext2>(Parser<ulong, TParseContext2, byte> lengthParser, Parser<T, TParseContext2, byte> contentParser)
+            where TParseContext2 : ScopeParseContext<byte, TParseContext2>
+        => new Sub<T, TParseContext2>(lengthParser, contentParser);
+
+        /// <summary>
         /// Builds a parser that parses a string with a prefixed length.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

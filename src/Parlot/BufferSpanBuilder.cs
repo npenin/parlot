@@ -25,6 +25,11 @@ namespace Parlot
         {
             Append((BufferSpan<T>)s);
         }
+        public void Append(BufferSpanBuilder<T> s)
+        {
+            blocks.AddRange(s.blocks);
+            Length += s.Length;
+        }
 
         public void Append(ReadOnlySpan<T> s)
         {

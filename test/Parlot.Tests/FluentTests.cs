@@ -237,25 +237,25 @@ namespace Parlot.Tests
         [Fact]
         public void ScopeShouldAllowScopedParserContext()
         {
-            var a = Fluent.Char.Parsers<ParseContext.Untyped>.Literals.Char('a');
-            var b = Fluent.Char.Parsers<ParseContext.Untyped>.Literals.Char('b');
-            var c = Fluent.Char.Parsers<ParseContext.Untyped>.Literals.Char('c');
+            var a = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Literals.Char('a');
+            var b = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Literals.Char('b');
+            var c = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Literals.Char('c');
 
-            var o2 = Fluent.Char.Parsers<ParseContext.Untyped>.Scope(
+            var o2 = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Scope(
                     a.Then((c, t) => { c.Set("lorem", "ipsum"); return "lorem"; })
                     .And(b).Then((c, t) => c.Get<string>(t.Item1)));
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped, char>>(o2);
-            Assert.False(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("a".AsSpan())), out _));
-            Assert.True(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("ab".ToCharArray())), out var result));
+            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
+            Assert.False(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("a".AsSpan())), out _));
+            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out var result));
             Assert.Equal("ipsum", result);
 
             o2 = Scope(
                     a.Then((c, t) => "lorem")
                     .And(b).Then((c, t) => c.Get<string>(t.Item1)));
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("ab".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out result));
             Assert.Null(result);
 
 
@@ -263,8 +263,8 @@ namespace Parlot.Tests
                     a.Then((c, t) => c.Set("lorem", "ipsum"))
                     .SkipAnd(Scope(b.Then((c, t) => c.Get<string>("lorem")))));
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("ab".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out result));
             Assert.Equal("ipsum", result);
 
             o2 = Scope(
@@ -273,8 +273,8 @@ namespace Parlot.Tests
                     .SkipAnd(c.Then((c, t) => c.Get<string>("lorem")))
                     );
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("abc".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("abc".ToCharArray())), out result));
             Assert.Equal("ipsumipsum", result);
 
             o2 = Scope(
@@ -283,8 +283,8 @@ namespace Parlot.Tests
                     .SkipAnd(c.Then((c, t) => c.Get<string>("lorem2")))
                     );
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped(new Scanner<char>("abc".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("abc".ToCharArray())), out result));
             Assert.Null(result);
         }
 

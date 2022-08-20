@@ -108,7 +108,29 @@ message OpBinary {
 
 
         [Fact]
-        public void ShouldParseSimpleMessage()
+        public void ShouldParseSimpleMessage1()
+        {
+            Assert.True(Protobuf.ProtoParser.MessageParser.TryParse(new Protobuf.FileParseContext(@"message Test1 {
+  optional int32 a = 1;
+        }"), out var mp));
+            var p = new Protobuf.Protocol { Declarations = { mp } };
+            Assert.NotNull(p);
+            var parsers = p.Build().BuildParsers();
+            parsers["Test1"].TryParse(new Parlot.Fluent.Byte.ParseContext(new Scanner<byte>(new byte[] { 0x08, 0x96, 0x01 })), out var m, out var error);
+            Assert.Null(error);
+            Assert.NotNull(m);
+            Assert.NotNull(m.Definition);
+            Assert.Equal("Test1", m.Definition.Name);
+            var b = Assert.Single(m.Values);
+            Assert.NotNull(b);
+            if (b.Value is ulong s)
+                Assert.Equal(150, (int)s);
+            else
+                Assert.True(b.Value is ulong);
+        }
+
+        [Fact]
+        public void ShouldParseSimpleMessage2()
         {
             Assert.True(Protobuf.ProtoParser.MessageParser.TryParse(new Protobuf.FileParseContext(@"message Test2 {
   optional string b = 2;
@@ -116,7 +138,7 @@ message OpBinary {
             var p = new Protobuf.Protocol { Declarations = { mp } };
             Assert.NotNull(p);
             var parsers = p.Build().BuildParsers();
-            parsers["Test2"].TryParse(new ParseContextWithScanner<byte>(new Scanner<byte>(new byte[] { 0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67 })), out var m, out var error);
+            parsers["Test2"].TryParse(new Fluent.Byte.ParseContext(new Scanner<byte>(new byte[] { 0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67 })), out var m, out var error);
             Assert.Null(error);
             Assert.NotNull(m);
             Assert.NotNull(m.Definition);
@@ -127,6 +149,37 @@ message OpBinary {
                 Assert.Equal("testing", s);
             else
                 Assert.True(b.Value is string);
+        }
+
+        [Fact]
+        public void ShouldParseSimpleMessage3()
+        {
+            Assert.True(Parsers<Protobuf.FileParseContext, char>.OneOrMany(Protobuf.ProtoParser.MessageParser.Then<Protobuf.Declaration>(x => x)).TryParse(new Protobuf.FileParseContext(@"message Test1 {
+  optional int32 a = 1;
+        }
+        
+        message Test3 {
+  optional Test1 c = 3;
+}"), out var mp));
+            var p = new Protobuf.Protocol();
+            p.Declarations.AddRange(mp);
+            Assert.NotNull(p);
+            var parsers = p.Build().BuildParsers();
+            parsers["Test3"].TryParse(new Fluent.Byte.ParseContext(new Scanner<byte>(new byte[] { 0x1a, 0x03, 0x08, 0x96, 0x01 })), out var m, out var error);
+            Assert.Null(error);
+            Assert.NotNull(m);
+            Assert.NotNull(m.Definition);
+            var b = Assert.Single(m.Values);
+            Assert.NotNull(b);
+            Assert.Null(b.Value);
+            Assert.NotNull(b.MessageValue);
+            System.Console.WriteLine(JsonConvert.SerializeObject(m));
+            b = Assert.Single(b.MessageValue.Values);
+            Assert.NotNull(b);
+            if (b.Value is ulong s)
+                Assert.Equal(150, (int)s);
+            else
+                Assert.True(b.Value is ulong);
         }
     }
 }
