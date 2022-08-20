@@ -34,7 +34,6 @@ namespace Parlot.Fluent.Byte
                     result.Set(lengthResult.Start, context.Scanner.Cursor.Position.Offset, buffer.GetBuffer());
                     return true;
                 }
-                System.Console.WriteLine("failed to read " + lengthResult.Value + " bytes");
             }
 
             context.Scanner.Cursor.ResetPosition(reset);

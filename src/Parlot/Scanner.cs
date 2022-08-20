@@ -62,7 +62,6 @@ namespace Parlot
         {
             if (Cursor.Eof)
             {
-                System.Console.WriteLine("eof");
                 result = TokenResult.Fail<TChar>();
                 return false;
             }

@@ -32,7 +32,6 @@ public class VarUInt<TParseContext> : Parlot.Fluent.Parser<ulong, TParseContext,
             else
                 bytes = b;
         }
-        System.Console.WriteLine(bytes);
 
         result.Set(start, context.Scanner.Cursor.Position.Offset, bytes);
         return true;
