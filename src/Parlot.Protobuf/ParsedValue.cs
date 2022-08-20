@@ -7,5 +7,8 @@ namespace Parlot.Protobuf
         public object Value;
 
         public ParsedMessage MessageValue;
+        public object[] Values;
+
+        public ParsedMessage[] MessageValues;
     }
 }

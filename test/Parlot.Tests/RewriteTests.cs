@@ -2,7 +2,7 @@ using Parlot.Fluent;
 using Parlot.Rewriting;
 using Xunit;
 using static Parlot.Fluent.Parsers;
-using static Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
+using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.StringParseContext>;
 using static Parlot.Tests.Models.RewriteTests;
 
 namespace Parlot.Tests

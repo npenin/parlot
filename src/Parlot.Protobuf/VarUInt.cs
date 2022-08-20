@@ -20,8 +20,8 @@ public class VarUInt<TParseContext> : Parlot.Fluent.Parser<ulong, TParseContext,
         var reset = context.Scanner.Cursor.Position;
         var start = reset.Offset;
 
-        ulong bytes = 0;
         var b = context.Scanner.ReadSingle();
+        ulong bytes = b;
         for (var n = 0; (b & mask) == mask && n < 8; n++)
         {
             if (n > 0)
@@ -32,6 +32,7 @@ public class VarUInt<TParseContext> : Parlot.Fluent.Parser<ulong, TParseContext,
             else
                 bytes = b;
         }
+        System.Console.WriteLine(bytes);
 
         result.Set(start, context.Scanner.Cursor.Position.Offset, bytes);
         return true;

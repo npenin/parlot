@@ -2,6 +2,7 @@ using System.IO;
 using Xunit;
 using Parlot.Fluent;
 using System;
+using Newtonsoft.Json;
 
 namespace Parlot.Tests.Calc
 {
@@ -102,6 +103,31 @@ message OpBinary {
             Assert.Equal(name, p.Name);
             Assert.Equal(type, p.TypeCode);
             Assert.Equal<uint>(index, p.Index);
+        }
+
+
+
+        [Fact]
+        public void ShouldParseSimpleMessage()
+        {
+            Assert.True(Protobuf.ProtoParser.MessageParser.TryParse(new Protobuf.FileParseContext(@"message Test2 {
+  optional string b = 2;
+        }"), out var mp));
+            var p = new Protobuf.Protocol { Declarations = { mp } };
+            Assert.NotNull(p);
+            System.Console.WriteLine(JsonConvert.SerializeObject(mp.Properties[0]));
+            var parsers = p.Build().BuildParsers();
+            parsers["Test2"].TryParse(new ParseContextWithScanner<byte>(new Scanner<byte>(new byte[] { 0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67 })), out var m, out var error);
+            Assert.Null(error);
+            Assert.NotNull(m);
+            Assert.NotNull(m.Definition);
+            Assert.Equal("Test2", m.Definition.Name);
+            var b = Assert.Single(m.Values);
+            Assert.NotNull(b);
+            if (b.Value is string s)
+                Assert.Equal("testing", s);
+            else
+                Assert.True(b.Value is string);
         }
     }
 }

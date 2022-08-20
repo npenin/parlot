@@ -11,6 +11,10 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that return either of the first successful of the specified parsers.
         /// </summary>
+        public static Parser<List<T>, TParseContext, TChar> AllOf<T>(params Parser<T, TParseContext, TChar>[] parsers) => new AllOf<T, TParseContext, TChar>(parsers);
+        /// <summary>
+        /// Builds a parser that return either of the first successful of the specified parsers.
+        /// </summary>
         public static Parser<T, TParseContext, TChar> OneOf<T>(params Parser<T, TParseContext, TChar>[] parsers) => new OneOf<T, TParseContext, TChar>(parsers);
 
         /// <summary>

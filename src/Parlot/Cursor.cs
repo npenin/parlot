@@ -135,7 +135,7 @@ namespace Parlot
                 Eof = true;
                 _offset = _textLength;
                 _current = NullChar;
-                return false;
+                return newOffset == _textLength;
             }
 
             _current = _buffer[newOffset];

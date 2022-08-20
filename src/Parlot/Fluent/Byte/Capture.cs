@@ -5,35 +5,39 @@ using System.Text;
 
 namespace Parlot.Fluent.Byte
 {
-    public sealed class String<TParseContext> : Parser<string, TParseContext, byte>
+    public sealed class CaptureWithPrefixedLength<TParseContext, TChar> : Parser<BufferSpan<TChar>, TParseContext, TChar>
     // , ICompilable<TParseContext, byte>
-    where TParseContext : ParseContextWithScanner<byte>
+    where TParseContext : ParseContextWithScanner<TChar>
+    where TChar : IConvertible, IEquatable<TChar>
     {
-        public override bool Serializable => captureParser.Serializable;
-        public override bool SerializableWithoutValue => captureParser.SerializableWithoutValue;
+        public override bool Serializable => lengthParser.Serializable;
+        public override bool SerializableWithoutValue => true;
 
-        private Encoding encoding;
-        private Parser<BufferSpan<byte>, TParseContext, byte> captureParser;
+        private Parser<ulong, TParseContext, TChar> lengthParser;
 
-        public String(Parser<BufferSpan<byte>, TParseContext, byte> captureParser, Encoding encoding)
+        public CaptureWithPrefixedLength(Parser<ulong, TParseContext, TChar> lengthParser)
         {
-            this.encoding = encoding;
-            this.captureParser = captureParser;
+            this.lengthParser = lengthParser;
         }
 
-        public override bool Parse(TParseContext context, ref ParseResult<string> result)
+        public override bool Parse(TParseContext context, ref ParseResult<BufferSpan<TChar>> result)
         {
             context.EnterParser(this);
 
             var reset = context.Scanner.Cursor.Position;
 
-            ParseResult<BufferSpan<byte>> buffer = new();
-
-            if (captureParser.Parse(context, ref buffer))
+            ParseResult<ulong> lengthResult = new();
+            if (lengthParser.Parse(context, ref lengthResult))
             {
-                result.Set(buffer.Start, buffer.End, encoding.GetString(buffer.Value.ToArray()));
-                return true;
+                if (context.Scanner.ReadN((int)lengthResult.Value, out var buffer))
+                {
+                    result.Set(lengthResult.Start, context.Scanner.Cursor.Position.Offset, buffer.GetBuffer());
+                    return true;
+                }
+                System.Console.WriteLine("failed to read " + lengthResult.Value + " bytes");
             }
+
+            context.Scanner.Cursor.ResetPosition(reset);
 
             return false;
         }
@@ -87,11 +91,14 @@ namespace Parlot.Fluent.Byte
         //     return result;
         // }
 
-        public override bool Serialize(BufferSpanBuilder<byte> sb, string value)
+        public override bool Serialize(BufferSpanBuilder<TChar> sb, BufferSpan<TChar> value)
         {
-            if (value == null)
-                value = string.Empty;
-            return !captureParser.Serialize(sb, encoding.GetBytes(value));
+            if (value.Equals(null))
+                return false;
+            if (!lengthParser.Serialize(sb, unchecked((ulong)value.Length)))
+                return false;
+            sb.Append(value);
+            return true;
         }
     }
 }

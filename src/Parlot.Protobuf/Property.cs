@@ -8,8 +8,6 @@ public class Property
     public TypeCode TypeCode;
 
     public bool IsFixedSize;
-
-    public object Value;
     public uint Index;
     public bool Repeated;
     public bool Optional;

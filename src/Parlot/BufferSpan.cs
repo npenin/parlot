@@ -5,11 +5,11 @@ namespace Parlot
     public readonly struct BufferSpan<T> : IEquatable<T[]>, IEquatable<BufferSpan<T>>
     where T : IEquatable<T>
     {
-        public BufferSpan(T[] buffer, int offset, int count)
+        public BufferSpan(T[] buffer, int offset = 0, int count = -1)
         {
             Buffer = buffer;
             Offset = offset;
-            Length = count;
+            Length = count == -1 ? buffer?.Length ?? 0 : count;
         }
 
         public BufferSpan(Span<T> buffer, int offset = 0, int count = -1)
@@ -19,11 +19,6 @@ namespace Parlot
 
         public BufferSpan(ReadOnlySpan<T> buffer, int offset = 0, int count = -1)
         : this(buffer.ToArray(), offset, count == -1 ? buffer.Length : count)
-        {
-        }
-
-        public BufferSpan(T[] buffer)
-        : this(buffer, 0, buffer?.Length ?? 0)
         {
         }
 

@@ -14,7 +14,9 @@ namespace Parlot.Tests.Calc
             var protocol = Protobuf.ProtoParser.ProtocolParser.Parse(FileParseContext.OpenFile(Path.Combine("..", "..", "..", "Biscuit.proto")));
             Assert.NotNull(protocol);
             protocol.Build();
-            var parser=protocol.BuildParser();
+            var parsers = protocol.BuildParsers();
+
+            // parsers["OpBinary"].Parse(new ParseContextWithScanner<byte>(new Scanner<byte>(new[] { 0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67 })))
         }
     }
 }

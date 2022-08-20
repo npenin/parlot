@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace Parlot.Fluent
+namespace Parlot.Fluent.Char
 {
-    public static class StringParsers<TParseContext>
+    public static class Parsers<TParseContext>
     where TParseContext : ParseContextWithScanner<char>
     {
         public static CultureInfo DefaultCulture = CultureInfo.InvariantCulture;
@@ -108,7 +108,7 @@ namespace Parlot.Fluent
         /// <param name="predicate">The predicate to match against each char.</param>
         /// <param name="minSize">The minimum number of matches required. Defaults to 1.</param>
         /// <param name="maxSize">When the parser reaches the maximum number of matches it returns <see langword="True"/>. Defaults to 0, i.e. no maximum size.</param>
-        public static Parser<BufferSpan<char>, TParseContext, char> Pattern(Func<char, bool> predicate, int minSize = 1, int maxSize = 0) => StringParsers<TParseContext>.SkipWhiteSpace(Parsers<TParseContext, char>.Pattern(predicate, minSize, maxSize));
+        public static Parser<BufferSpan<char>, TParseContext, char> Pattern(Func<char, bool> predicate, int minSize = 1, int maxSize = 0) => Parsers<TParseContext>.SkipWhiteSpace(Parsers<TParseContext, char>.Pattern(predicate, minSize, maxSize));
 
         /// <summary>
         /// Builds a parser that skips white spaces before another one.
@@ -194,37 +194,37 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that matches anything until whitespaces.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> NonWhiteSpace(bool includeNewLines = false) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.NonWhiteSpaceLiteral<TParseContext>(includeNewLines: includeNewLines));
+        public Parser<BufferSpan<char>, TParseContext, char> NonWhiteSpace(bool includeNewLines = false) => Parsers<TParseContext>.SkipWhiteSpace(new Char.NonWhiteSpaceLiteral<TParseContext>(includeNewLines: includeNewLines));
 
         /// <summary>
         /// Builds a parser that matches the specified text.
         /// </summary>
-        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.TextLiteral<TParseContext>(text, caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
+        public Parser<string, TParseContext, char> Text(string text, bool caseInsensitive = false) => Parsers<TParseContext>.SkipWhiteSpace(new Char.TextLiteral<TParseContext>(text, caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
 
         /// <summary>
         /// Builds a parser that matches the specified char.
         /// </summary>
-        public Parser<char, TParseContext, char> Char(char c) => StringParsers<TParseContext>.SkipWhiteSpace(new CharLiteral<char, TParseContext>(c));
+        public Parser<char, TParseContext, char> Char(char c) => Parsers<TParseContext>.SkipWhiteSpace(new CharLiteral<char, TParseContext>(c));
 
         /// <summary>
         /// Builds a parser that matches an integer.
         /// </summary>
-        public Parser<long, TParseContext, char> Integer(NumberStyles numberOptions = NumberStyles.None) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.IntegerLiteral<TParseContext>(numberOptions));
+        public Parser<long, TParseContext, char> Integer(NumberStyles numberOptions = NumberStyles.None) => Parsers<TParseContext>.SkipWhiteSpace(new Char.IntegerLiteral<TParseContext>(numberOptions));
 
         /// <summary>
         /// Builds a parser that matches a floating point number.
         /// </summary>
-        public Parser<decimal, TParseContext, char> Decimal(NumberStyles numberOptions = NumberStyles.AllowDecimalPoint, CultureInfo culture = null) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.DecimalLiteral<TParseContext>(numberOptions, culture ?? DefaultCulture));
+        public Parser<decimal, TParseContext, char> Decimal(NumberStyles numberOptions = NumberStyles.AllowDecimalPoint, CultureInfo culture = null) => Parsers<TParseContext>.SkipWhiteSpace(new Char.DecimalLiteral<TParseContext>(numberOptions, culture ?? DefaultCulture));
 
         /// <summary>
         /// Builds a parser that matches an quoted string that can be escaped.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> String(Char.StringLiteralQuotes quotes = Fluent.Char.StringLiteralQuotes.SingleOrDouble) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.StringLiteral<TParseContext>(quotes));
+        public Parser<BufferSpan<char>, TParseContext, char> String(Char.StringLiteralQuotes quotes = Fluent.Char.StringLiteralQuotes.SingleOrDouble) => Parsers<TParseContext>.SkipWhiteSpace(new Char.StringLiteral<TParseContext>(quotes));
 
         /// <summary>
         /// Builds a parser that matches an identifier.
         /// </summary>
-        public Parser<BufferSpan<char>, TParseContext, char> Identifier(Func<char, bool> extraStart = null, Func<char, bool> extraPart = null) => StringParsers<TParseContext>.SkipWhiteSpace(new Char.Identifier<TParseContext>(extraStart, extraPart));
+        public Parser<BufferSpan<char>, TParseContext, char> Identifier(Func<char, bool> extraStart = null, Func<char, bool> extraPart = null) => Parsers<TParseContext>.SkipWhiteSpace(new Char.Identifier<TParseContext>(extraStart, extraPart));
 
         /// <summary>
         /// Builds a parser that matches a char against a predicate.
@@ -233,7 +233,7 @@ namespace Parlot.Fluent
         /// <param name="minSize">The minimum number of matches required. Defaults to 1.</param>
         /// <param name="maxSize">When the parser reaches the maximum number of matches it returns <see langword="True"/>. Defaults to 0, i.e. no maximum size.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Parser<BufferSpan<char>, TParseContext, char> Pattern(Func<char, bool> predicate, int minSize = 1, int maxSize = 0) => StringParsers<TParseContext>.SkipWhiteSpace(Parsers<TParseContext, char>.Pattern(predicate, minSize, maxSize));
+        public Parser<BufferSpan<char>, TParseContext, char> Pattern(Func<char, bool> predicate, int minSize = 1, int maxSize = 0) => Parsers<TParseContext>.SkipWhiteSpace(Parsers<TParseContext, char>.Pattern(predicate, minSize, maxSize));
     }
 
 }

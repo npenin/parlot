@@ -3,8 +3,8 @@ using BenchmarkDotNet.Configs;
 using Parlot.Fluent;
 using Parlot.Tests.Calc;
 using Parlot.Tests.Json;
-using static Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
-using Parsers = Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
+using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.StringParseContext>;
+using Parsers = Parlot.Fluent.Char.Parsers<Parlot.Fluent.StringParseContext>;
 
 namespace Parlot.Benchmarks
 {

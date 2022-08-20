@@ -3,7 +3,7 @@ namespace Parlot.Protobuf;
 using Parlot.Fluent;
 using System;
 using System.Linq;
-using static Parlot.Fluent.StringParsers<FileParseContext>;
+using static Parlot.Fluent.Char.Parsers<FileParseContext>;
 
 public class ProtoParser
 {

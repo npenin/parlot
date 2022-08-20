@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
-using static Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
+using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.StringParseContext>;
 
 namespace Parlot.Tests
 {

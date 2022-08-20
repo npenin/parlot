@@ -4,11 +4,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace Parlot.Fluent
+namespace Parlot.Fluent.Byte
 {
-    public static class ByteParsers<TParseContext>
+    public static class Parsers<TParseContext>
     where TParseContext : ParseContextWithScanner<byte>
     {
+        /// <summary>
+        /// Builds a parser that return either of the first successful of the specified parsers.
+        /// </summary>
+        public static Parser<List<T>, TParseContext, byte> AllOf<T>(params Parser<T, TParseContext, byte>[] parsers) => Parsers<TParseContext, byte>.AllOf(parsers);
+
         /// <summary>
         /// Builds a parser that return either of the first successful of the specified parsers.
         /// </summary>
@@ -163,15 +168,32 @@ namespace Parlot.Fluent
         /// <summary>
         /// Builds a parser that parses unsigned long (64 bits).
         /// </summary>
-        public static Parser<string, TParseContext, byte> String(Parser<ulong, TParseContext, byte> length, System.Text.Encoding encoding = null) => new Byte.StringWithPrefixedLength<TParseContext>(length, encoding ?? System.Text.Encoding.UTF8);
+        public static Parser<string, TParseContext, byte> String(Parser<ulong, TParseContext, byte> length, System.Text.Encoding encoding = null) => new Byte.String<TParseContext>(Buffer(length), encoding ?? System.Text.Encoding.UTF8);
 
         /// <summary>
         /// Builds a parser that parses unsigned long (64 bits).
         /// </summary>
+        public static Parser<string, TParseContext, byte> String(Parser<BufferSpan<byte>, TParseContext, byte> buffer, System.Text.Encoding encoding = null) => new Byte.String<TParseContext>(buffer, encoding ?? System.Text.Encoding.UTF8);
+
+        /// <summary>
+        /// Builds a parser that parses unsigned long (64 bits).
+        /// </summary>
+        public static Parser<BufferSpan<byte>, TParseContext, byte> Buffer(Parser<ulong, TParseContext, byte> length) => new Byte.CaptureWithPrefixedLength<TParseContext, byte>(length);
+
+        /// <summary>
+        /// Builds a parser that parses a string with a prefixed length.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Parser<string, TParseContext, byte> String<T>(Parser<T, TParseContext, byte> length, System.Text.Encoding encoding = null)
             where T : IConvertible
-        => String(length.Then(t => t.ToUInt64(null)), encoding);
+        => String(Buffer(length), encoding);
+        /// <summary>
+        /// Builds a parser that captures a buffer with a prefixed length.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Parser<BufferSpan<byte>, TParseContext, byte> Buffer<T>(Parser<T, TParseContext, byte> length)
+            where T : IConvertible
+        => Buffer(length.Then(t => t.ToUInt64(null)));
 
     }
 }

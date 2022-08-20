@@ -3,7 +3,7 @@ using Parlot.Fluent;
 using Parlot.Fluent.Char;
 using System.Collections.Generic;
 using Xunit;
-using static Parlot.Fluent.StringParsers<Parlot.Fluent.StringParseContext>;
+using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.StringParseContext>;
 
 namespace Parlot.Tests
 {
@@ -237,11 +237,11 @@ namespace Parlot.Tests
         [Fact]
         public void ScopeShouldAllowScopedParserContext()
         {
-            var a = StringParsers<ParseContext.Untyped>.Literals.Char('a');
-            var b = StringParsers<ParseContext.Untyped>.Literals.Char('b');
-            var c = StringParsers<ParseContext.Untyped>.Literals.Char('c');
+            var a = Fluent.Char.Parsers<ParseContext.Untyped>.Literals.Char('a');
+            var b = Fluent.Char.Parsers<ParseContext.Untyped>.Literals.Char('b');
+            var c = Fluent.Char.Parsers<ParseContext.Untyped>.Literals.Char('c');
 
-            var o2 = StringParsers<ParseContext.Untyped>.Scope(
+            var o2 = Fluent.Char.Parsers<ParseContext.Untyped>.Scope(
                     a.Then((c, t) => { c.Set("lorem", "ipsum"); return "lorem"; })
                     .And(b).Then((c, t) => c.Get<string>(t.Item1)));
 

@@ -81,7 +81,7 @@ namespace Parlot.Fluent
     {
         public static T Parse<T>(this Parser<T, StringParseContext, char> parser, string text)
         {
-            return parser.Parse(new StringParseContext(new Scanner<char>(text.AsSpan())));
+            return parser.Parse(new StringParseContext(new Scanner<char>(text.ToCharArray())));
         }
 
         public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value)
@@ -91,7 +91,7 @@ namespace Parlot.Fluent
 
         public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value, out ParseError error)
         {
-            return parser.TryParse(new StringParseContext(new Scanner<char>(text.AsSpan())), out value, out error);
+            return parser.TryParse(new StringParseContext(new Scanner<char>(text.ToCharArray())), out value, out error);
         }
 
         public static bool TryParse<TResult, TParseContext, TChar>(this Parser<TResult, TParseContext, TChar> parser, TParseContext context, out TResult value)
