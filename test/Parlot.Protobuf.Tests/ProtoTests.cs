@@ -173,7 +173,6 @@ message OpBinary {
             Assert.NotNull(b);
             Assert.Null(b.Value);
             Assert.NotNull(b.MessageValue);
-            System.Console.WriteLine(JsonConvert.SerializeObject(m));
             b = Assert.Single(b.MessageValue.Values);
             Assert.NotNull(b);
             if (b.Value is ulong s)

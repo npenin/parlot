@@ -108,9 +108,9 @@ public class Protocol
         {
             if (d is Message m)
             {
-                parsers[m.Name].Parser = AllOf(m.Properties.Where(p => p.Required).Select(p => PropertyParser(p, parsers)).ToArray())
-                .And(AllOf(m.Properties.Where(p => p.Repeated).Select(p => ZeroOrMany(PropertyParser(p, parsers)).Then(values => new ParsedValue { Definition = p, Values = values.Select(v => v.Value).ToArray(), MessageValues = values.Select(v => v.MessageValue).ToArray() })).ToArray()))
-                .And(AllOf(m.Properties.Where(p => p.Optional).Select(p => ZeroOrOne(PropertyParser(p, parsers))).ToArray()))
+                parsers[m.Name].Parser = AllOf(true, m.Properties.Where(p => p.Required).Select(p => PropertyParser(p, parsers)).ToArray())
+                .And(AllOf(true, m.Properties.Where(p => p.Repeated).Select(p => ZeroOrMany(PropertyParser(p, parsers)).Then(values => new ParsedValue { Definition = p, Values = values.Select(v => v.Value).ToArray(), MessageValues = values.Select(v => v.MessageValue).ToArray() })).ToArray()))
+                .And(AllOf(true, m.Properties.Where(p => p.Optional).Select(p => ZeroOrOne(PropertyParser(p, parsers))).ToArray()))
                 .Then(t => new ParsedMessage { Definition = m, Values = t.Item1.Union(t.Item2).Union(t.Item3.Where(p => p != null)).ToList() });
             }
             else if (d is OneOf o)

@@ -12,7 +12,7 @@ namespace Parlot.Fluent.Byte
         /// <summary>
         /// Builds a parser that return either of the first successful of the specified parsers.
         /// </summary>
-        public static Parser<List<T>, TParseContext, byte> AllOf<T>(params Parser<T, TParseContext, byte>[] parsers) => Parsers<TParseContext, byte>.AllOf(parsers);
+        public static Parser<List<T>, TParseContext, byte> AllOf<T>(bool allowRepeat, params Parser<T, TParseContext, byte>[] parsers) => Parsers<TParseContext, byte>.AllOf(allowRepeat, parsers);
 
         /// <summary>
         /// Builds a parser that return either of the first successful of the specified parsers.

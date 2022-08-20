@@ -19,14 +19,16 @@ namespace Parlot.Fluent
     where TParseContext : ParseContextWithScanner<TChar>
     where TChar : IEquatable<TChar>, IConvertible
     {
+        private readonly bool _allowRepeat;
         private readonly Parser<T, TParseContext, TChar>[] _parsers;
         internal readonly Dictionary<TChar, List<Parser<T, TParseContext, TChar>>> _lookupTable;
         internal readonly bool _skipWhiteSpace;
 
         private static bool canUseNewLines = typeof(StringParseContext).IsAssignableFrom(typeof(TParseContext));
 
-        public AllOf(Parser<T, TParseContext, TChar>[] parsers)
+        public AllOf(bool allowRepeat, Parser<T, TParseContext, TChar>[] parsers)
         {
+            _allowRepeat = allowRepeat;
             _parsers = parsers ?? throw new ArgumentNullException(nameof(parsers));
 
             // All parsers are seekable
@@ -106,7 +108,7 @@ namespace Parlot.Fluent
                     }
                 }
 
-                while (processedParsers.Count < _parsers.Length)
+                while (_allowRepeat && context.Scanner.Cursor.Eof || !_allowRepeat && processedParsers.Count < _parsers.Length)
                 {
                     var found = false;
                     if (_lookupTable.TryGetValue(cursor.Current, out var seekableParsers))
@@ -115,7 +117,7 @@ namespace Parlot.Fluent
 
                         for (var i = 0; i < length; i++)
                         {
-                            if (!processedParsers.Contains(seekableParsers[i]) && seekableParsers[i].Parse(context, ref inner))
+                            if ((_allowRepeat || !processedParsers.Contains(seekableParsers[i])) && seekableParsers[i].Parse(context, ref inner))
                             {
                                 processedParsers.Add(seekableParsers[i]);
                                 results.Add(inner.Value);

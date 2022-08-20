@@ -11,6 +11,7 @@ public class Property
     public uint Index;
     public bool Repeated;
     public bool Optional;
+    public bool Packed;
     public string Type;
     public bool Required;
     public Declaration Declaration;
