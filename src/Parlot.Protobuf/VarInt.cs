@@ -21,7 +21,6 @@ public class VarInt<TParseContext> : Parlot.Fluent.Parser<long, TParseContext, b
         {
             var size = unsignedResult.End - unsignedResult.Start;
             long longValue = (long)unsignedResult.Value;
-            System.Console.WriteLine($"{unsignedResult.Start},{unsignedResult.End}");
             result.Set(unsignedResult.Start, unsignedResult.End, (longValue >> 1) ^ (-(longValue & 1)));
         }
 

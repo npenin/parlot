@@ -2,6 +2,7 @@ namespace Parlot.Protobuf;
 
 using Parlot.Fluent;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using static Parlot.Fluent.Char.Parsers<FileParseContext>;
 
@@ -70,29 +71,14 @@ public class ProtoParser
                 ZeroOrMany(Terms.Identifier().AndSkip(Terms.Char('=')).And(Terms.Integer()).AndSkip(Terms.Char(';').ElseError("missing semicolon"))),
                 Terms.Char('}').ElseError("expected closing curved brace for enum"))
             )
-            .Then(t => new Enum<uint>
+            .Then(t => new Enum<ulong>
             {
                 Name = t.Item1.ToString(),
-                Values = t.Item2.Select(v => new Enum<uint>.EnumValue { Value = (uint)v.Item2, Name = v.Item1.ToString() }).ToList()
+                Values = t.Item2.Select(v => new Enum<ulong>.EnumValue { Value = (uint)v.Item2, Name = v.Item1.ToString() }).ToList()
             });
         ;
 
-        MessageParser = Terms.Text("message")
-            .SkipAnd(Terms.Identifier().ElseError("invalid identifier"))
-            .And(Between(
-                Terms.Char('{').ElseError("expected opening curved brace for message"),
-                ZeroOrMany(EnumParser).And(
-                ZeroOrMany(PropertyParser.AndSkip(Terms.Char(';').ElseError("missing semicolon")))),
-                Terms.Char('}').ElseError("expected closing curved brace for message"))
-            )
-            .Then(t => new Message
-            {
-                Name = t.Item1.ToString(),
-                Properties = t.Item2.Item2,
-                Enums = t.Item2.Item1
-            });
-
-        var oneOfParser = Terms.Text("oneOf")
+        var oneOfParser = Terms.Text("oneof")
             .SkipAnd(Terms.Identifier().ElseError("invalid identifier"))
             .And(Between(
                 Terms.Char('{').ElseError("expected opening curved brace for oneof"),
@@ -106,6 +92,23 @@ public class ProtoParser
             });
         ;
 
+        MessageParser = Terms.Text("message")
+            .SkipAnd(Terms.Identifier().ElseError("invalid identifier"))
+            .And(Between(
+                Terms.Char('{').ElseError("expected opening curved brace for message"),
+                oneOfParser.Then<List<Declaration>>(x => new() { x }).Or(
+                ZeroOrMany(EnumParser.Then<Declaration>(x => x).Or(PropertyParser.AndSkip(Terms.Char(';').ElseError("missing semicolon")).Then<Declaration>(x => x)))),
+                Terms.Char('}').ElseError("expected closing curved brace for message"))
+            )
+            .Then(t => new Message
+            {
+                Name = t.Item1.ToString(),
+                Properties = t.Item2.OfType<Property>().ToList(),
+                Enums = t.Item2.OfType<Enum<ulong>>().ToList(),
+                OneOf = t.Item2.OfType<OneOf>().SingleOrDefault()
+            });
+
+
         var syntaxParser = Terms.Text("syntax").SkipAnd(Terms.Char('=').ElseError("expected equals")).SkipAnd(Terms.String().ElseError("expected string").When(s => s.ToString() == "proto2").ElseError("supported syntax is proto2 only"));
 
         var protocolParser = Deferred<Protocol>();
@@ -113,16 +116,18 @@ public class ProtoParser
 
         var importParser = Terms.Text("import").SkipAnd(ZeroOrOne(Terms.Text("weak").Or(Terms.Text("public")))).And(Terms.String().ElseError("expected string")).Then((c, t) => c.Protocol.Merge(protocolParser.Parse(c.Import(t.Item2.ToString())), t.Item1 == "private"));
 
-        protocolParser.Parser = syntaxParser.Then<object>(x => x).And(ZeroOrMany(
-                importParser.Then<object>(x => x)
-            .Or(MessageParser.Then((c, x) => { c.Protocol.Declarations.Add(x); return (object)x; }))
-            .Or(EnumParser.Then((c, x) => { c.Protocol.Declarations.Add(x); return (object)x; }))
-            .Or(oneOfParser.Then((c, x) => { c.Protocol.Declarations.Add(x); return (object)x; }))))
+        protocolParser.Parser = syntaxParser.SkipAnd(Terms.Char(';')).SkipAnd(
+            ZeroOrOne(Terms.Text("package").SkipAnd(Terms.Identifier(null, c => c == '.').ElseError("Invalid package specifiction")).AndSkip(Terms.Char(';')).Then((c, x) => { c.Protocol.Package = x.ToString(); return c.Protocol; }))
+        ).SkipAnd(ZeroOrMany(
+                importParser.Then((c, x) => c.Protocol)
+            .Or(MessageParser.Then((c, x) => { c.Protocol.Declarations.Add(x); return c.Protocol; }))
+            .Or(EnumParser.Then((c, x) => { c.Protocol.Declarations.Add(x); return c.Protocol; }))
+        ))
             .Then((c, o) => c.Protocol.Build());
     }
 
     public static Parser<Property, FileParseContext, char> PropertyParser { get; }
     public static Parser<Message, FileParseContext, char> MessageParser { get; }
-    public static Parser<Enum<uint>, FileParseContext, char> EnumParser { get; }
+    public static Parser<Enum<ulong>, FileParseContext, char> EnumParser { get; }
     public static Parser<Protocol, FileParseContext, char> ProtocolParser { get; }
 }

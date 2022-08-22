@@ -2,9 +2,8 @@ namespace Parlot.Protobuf;
 
 using System;
 
-public class Property
+public class Property : Declaration
 {
-    public string Name;
     public TypeCode TypeCode;
 
     public bool IsFixedSize;

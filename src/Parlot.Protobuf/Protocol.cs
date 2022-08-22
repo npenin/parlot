@@ -13,6 +13,8 @@ public class Protocol
     public readonly List<Declaration> Declarations = new();
     public readonly List<Declaration> PrivateDeclarations = new();
 
+    public string Package;
+
     public void Merge(Protocol protocol, bool isPrivate)
     {
         if (isPrivate)
@@ -59,7 +61,7 @@ public class Protocol
             case TypeCode.Map:
 
             case TypeCode.Declaration:
-                if (p.Declaration is Enum<uint>)
+                if (p.Declaration is Enum<ulong>)
                     return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v });
                 return Sub(new VarUInt<ParseContext>(), parsers[p.Type]).Then(v => new ParsedValue { Definition = p, MessageValue = v });
             default:
@@ -89,7 +91,7 @@ public class Protocol
                 prefix = prefix | 0x2;
                 break;
             case TypeCode.Declaration:
-                if (p.Declaration is not Enum<uint>)
+                if (p.Declaration is not Enum<ulong>)
                     prefix = prefix | 0x2;
                 break;
                 // case TypeCode.Map:
@@ -103,20 +105,16 @@ public class Protocol
 
     public IDictionary<string, Parlot.Fluent.Deferred<ParsedMessage, ParseContext, byte>> BuildParsers()
     {
-        var parsers = Declarations.Where(d => d is not Enum<uint>).ToDictionary(d => d.Name, (d) => Parsers.Deferred<ParsedMessage>());
-        foreach (var d in Declarations)
+        var parsers = Declarations.Where(d => d is not Enum<ulong>).ToDictionary(d => d.Name, (d) => Parsers.Deferred<ParsedMessage>());
+        foreach (var m in Declarations.OfType<Message>())
         {
-            if (d is Message m)
-            {
+            if (m.OneOf == null)
                 parsers[m.Name].Parser = AllOf(true, m.Properties.Where(p => p.Required).Select(p => PropertyParser(p, parsers)).ToArray())
                 .And(AllOf(true, m.Properties.Where(p => p.Repeated).Select(p => ZeroOrMany(PropertyParser(p, parsers)).Then(values => new ParsedValue { Definition = p, Values = values.Select(v => v.Value).ToArray(), MessageValues = values.Select(v => v.MessageValue).ToArray() })).ToArray()))
                 .And(AllOf(true, m.Properties.Where(p => p.Optional).Select(p => ZeroOrOne(PropertyParser(p, parsers))).ToArray()))
                 .Then(t => new ParsedMessage { Definition = m, Values = t.Item1.Union(t.Item2).Union(t.Item3.Where(p => p != null)).ToList() });
-            }
-            else if (d is OneOf o)
-            {
-                parsers[d.Name].Parser = OneOf(o.Possibilities.Select(p => TypeParser(p, parsers).Then(p => p.MessageValue)).ToArray());
-            }
+            else
+                parsers[m.Name].Parser = OneOf(m.OneOf.Possibilities.Select(p => TypeParser(p, parsers).Then(p => p.MessageValue)).ToArray());
         }
 
         return parsers;
@@ -124,12 +122,12 @@ public class Protocol
 
     public Protocol Build()
     {
-        IEnumerable<(Property, List<Enum<uint>>)> remainingProperties = Declarations.SelectMany(d =>
+        IEnumerable<(Property, List<Enum<ulong>>)> remainingProperties = Declarations.SelectMany(d =>
         {
             if (d is Message m)
-                return m.Properties.Select<Property, (Property, List<Enum<uint>>)>(p => new(p, m.Enums));
+                return m.Properties.Select<Property, (Property, List<Enum<ulong>>)>(p => new(p, m.Enums));
             if (d is OneOf o)
-                return o.Possibilities.Select<Property, (Property, List<Enum<uint>>)>(p => new(p, new List<Enum<uint>>(0)));
+                return o.Possibilities.Select<Property, (Property, List<Enum<ulong>>)>(p => new(p, new List<Enum<ulong>>(0)));
             throw new NotSupportedException();
         }).Where(p => p.Item1.TypeCode == TypeCode.Declaration).ToList();
         bool processedOne;

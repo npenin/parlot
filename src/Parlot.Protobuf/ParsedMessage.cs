@@ -2,9 +2,11 @@ namespace Parlot.Protobuf;
 
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
 using System.Reflection;
 
-public class ParsedMessage
+public class ParsedMessage : DynamicObject
 {
     public Message Definition;
 
@@ -39,5 +41,32 @@ public class ParsedMessage
         }
 
         return result;
+    }
+
+    public override IEnumerable<string> GetDynamicMemberNames()
+    {
+        System.Console.WriteLine("GetDynamicMemberNames");
+        if (Definition.OneOf != null)
+            return new[] { Definition.OneOf.Name };
+        return Definition.Properties.Select(p => p.Name);
+    }
+
+    public override bool TryGetMember(GetMemberBinder binder, out object result)
+    {
+        var values = Values.Where(v => v.Definition.Name == binder.Name).ToList();
+        System.Console.WriteLine("values: {0}", values.Count);
+        switch (values.Count)
+
+        {
+            case 0:
+                result = null;
+                return false;
+            case 1:
+                result = values[0].GetValue();
+                return true;
+            default:
+                result = values.SelectMany(v => v.GetValues());
+                return true;
+        }
     }
 }

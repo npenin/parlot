@@ -84,9 +84,9 @@ message OpBinary {
             Assert.Equal("Kind", m.Name);
             Assert.Equal(2, m.Values.Count);
             Assert.Equal("Allow", m.Values[0].Name);
-            Assert.Equal<uint>(0, m.Values[0].Value);
+            Assert.Equal<ulong>(0, m.Values[0].Value);
             Assert.Equal("Deny", m.Values[1].Name);
-            Assert.Equal<uint>(1, m.Values[1].Value);
+            Assert.Equal<ulong>(1, m.Values[1].Value);
         }
 
 

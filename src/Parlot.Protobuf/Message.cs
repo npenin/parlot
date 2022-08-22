@@ -6,5 +6,7 @@ public class Message : Declaration
 {
     public List<Property> Properties = new();
 
-    public List<Enum<uint>> Enums = new();
+    public List<Enum<ulong>> Enums = new();
+
+    public OneOf OneOf;
 }

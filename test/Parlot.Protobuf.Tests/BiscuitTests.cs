@@ -2,21 +2,40 @@ using System.IO;
 using Xunit;
 using Parlot.Fluent;
 using Parlot.Protobuf;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Parlot.Tests.Calc
 {
 
     public class BiscuitTests
     {
-        [Fact]
-        public void Parse()
+        private static IDictionary<string, Deferred<ParsedMessage, Fluent.Byte.ParseContext, byte>> GetParsers()
         {
-            var protocol = Protobuf.ProtoParser.ProtocolParser.Parse(FileParseContext.OpenFile(Path.Combine("..", "..", "..", "Biscuit.proto")));
+            Protobuf.ProtoParser.ProtocolParser.TryParse(FileParseContext.OpenFile(Path.Combine("..", "..", "..", "Biscuit.proto")), out var protocol, out var error);
+            Assert.Null(error);
             Assert.NotNull(protocol);
-            protocol.Build();
-            var parsers = protocol.BuildParsers();
+            Assert.Equal(17, protocol.Declarations.Count);
+            return protocol.Build().BuildParsers();
 
-            // parsers["OpBinary"].Parse(new Fluent.Byte.ParseContext(new Scanner<byte>(new[] { 0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67 })))
+        }
+
+        [Fact]
+        public void ParseEnum()
+        {
+            var result = GetParsers()["OpBinary"].Parse(new Fluent.Byte.ParseContext(new Scanner<byte>(new byte[] { 0x08, 0x01 })));
+            Assert.NotNull(result);
+            var v = Assert.Single(result.Values);
+            Assert.Equal("kind", v.Definition.Name);
+            Assert.Equal((ulong)1, v.Value);
+            Assert.Equal((ulong)1, v.GetValue());
+        }
+
+        [Fact]
+        public void ParseDynamicEnum()
+        {
+            dynamic result = GetParsers()["OpBinary"].Parse(new Fluent.Byte.ParseContext(new Scanner<byte>(new byte[] { 0x08, 0x01 })));
+            Assert.Equal((ulong)1, result.kind);
         }
     }
 }
