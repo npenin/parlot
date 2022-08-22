@@ -17,7 +17,6 @@ namespace Parlot.Tests.Calc
             Assert.NotNull(protocol);
             Assert.Equal(17, protocol.Declarations.Count);
             return protocol.Build().BuildParsers();
-
         }
 
         [Fact]

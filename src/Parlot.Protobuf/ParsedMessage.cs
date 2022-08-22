@@ -54,7 +54,6 @@ public class ParsedMessage : DynamicObject
     public override bool TryGetMember(GetMemberBinder binder, out object result)
     {
         var values = Values.Where(v => v.Definition.Name == binder.Name).ToList();
-        System.Console.WriteLine("values: {0}", values.Count);
         switch (values.Count)
 
         {
