@@ -1,8 +1,8 @@
-namespace Parlot.Fluent
+namespace Parlot.Fluent.Char
 {
     using System;
 
-    public class StringParseContext : ParseContextWithScanner<char>
+    public class ParseContext : ParseContextWithScanner<char>
     {
         /// <summary>
         /// Whether new lines are treated as normal chars or white spaces.
@@ -13,17 +13,17 @@ namespace Parlot.Fluent
         /// </remarks>
         public bool UseNewLines { get; private set; }
 
-        public StringParseContext(Scanner<char> scanner, bool useNewLines = false)
+        public ParseContext(Scanner<char> scanner, bool useNewLines = false)
         : base(scanner)
         {
             UseNewLines = useNewLines;
         }
 
-        public StringParseContext(string text, bool useNewLines = false)
+        public ParseContext(string text, bool useNewLines = false)
         : this(new Scanner<char>(text.AsSpan()), useNewLines)
         {
         }
 
-        
+
     }
 }

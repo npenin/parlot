@@ -24,7 +24,7 @@ namespace Parlot.Fluent
         internal readonly Dictionary<TChar, List<Parser<T, TParseContext, TChar>>> _lookupTable;
         internal readonly bool _skipWhiteSpace;
 
-        private static bool canUseNewLines = typeof(StringParseContext).IsAssignableFrom(typeof(TParseContext));
+        private static bool canUseNewLines = typeof(Char.ParseContext).IsAssignableFrom(typeof(TParseContext));
 
         public AllOf(bool allowRepeat, Parser<T, TParseContext, TChar>[] parsers)
         {
@@ -97,7 +97,7 @@ namespace Parlot.Fluent
                     {
                         if (canUseNewLines)
                         {
-                            var stringContext = (StringParseContext)(object)context;
+                            var stringContext = (Char.ParseContext)(object)context;
                             if (stringContext.UseNewLines)
                                 stringContext.Scanner.SkipWhiteSpace();
                             else
@@ -108,7 +108,7 @@ namespace Parlot.Fluent
                     }
                 }
 
-                while (_allowRepeat && context.Scanner.Cursor.Eof || !_allowRepeat && processedParsers.Count < _parsers.Length)
+                while (_allowRepeat && !context.Scanner.Cursor.Eof || !_allowRepeat && processedParsers.Count < _parsers.Length)
                 {
                     var found = false;
                     if (_lookupTable.TryGetValue(cursor.Current, out var seekableParsers))
@@ -141,14 +141,15 @@ namespace Parlot.Fluent
                 var parsers = _parsers;
                 var length = parsers.Length;
 
-                while (processedParsers.Count < length)
+                while (_allowRepeat && !context.Scanner.Cursor.Eof || !_allowRepeat && processedParsers.Count < length)
                 {
                     var found = false;
                     for (var i = 0; i < length; i++)
                     {
-                        if (!processedParsers.Contains(parsers[i]) && parsers[i].Parse(context, ref inner))
+                        if ((_allowRepeat || !processedParsers.Contains(parsers[i])) && parsers[i].Parse(context, ref inner))
                         {
-                            processedParsers.Add(parsers[i]);
+                            if (_allowRepeat && !processedParsers.Contains(parsers[i]))
+                                processedParsers.Add(parsers[i]);
                             results.Add(inner.Value);
                             found = true;
                             break;
@@ -160,6 +161,7 @@ namespace Parlot.Fluent
 
                 if (processedParsers.Count == length)
                 {
+                    System.Console.WriteLine("end of allof");
                     result.Set(start.Offset, context.Scanner.Cursor.Offset, results);
                     return true;
                 }

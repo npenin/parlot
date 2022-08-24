@@ -1,10 +1,9 @@
 namespace Parlot.Protobuf;
 
 using Parlot;
-using Parlot.Fluent;
 using System.IO;
 
-public class FileParseContext : StringParseContext
+public class FileParseContext : Parlot.Fluent.Char.ParseContext
 {
     public FileParseContext(string text, bool useNewLines = false) : base(text, useNewLines)
     {

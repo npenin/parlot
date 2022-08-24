@@ -2,7 +2,7 @@ using Parlot.Fluent;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
-using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.StringParseContext>;
+using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.Char.ParseContext>;
 
 namespace Parlot.Tests
 {
@@ -252,15 +252,15 @@ namespace Parlot.Tests
         [Fact]
         public void ShouldCompileCapture()
         {
-            Parser<char, StringParseContext, char> Dot = Literals.Char('.');
-            Parser<char, StringParseContext, char> Plus = Literals.Char('+');
-            Parser<char, StringParseContext, char> Minus = Literals.Char('-');
-            Parser<char, StringParseContext, char> At = Literals.Char('@');
-            Parser<BufferSpan<char>, StringParseContext, char> WordChar = Terms.Pattern(char.IsLetterOrDigit);
-            Parser<List<char>, StringParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Plus, Minus));
-            Parser<List<char>, StringParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Minus));
-            Parser<List<char>, StringParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Minus));
-            Parser<BufferSpan<char>, StringParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
+            Parser<char, Fluent.Char.ParseContext, char> Dot = Literals.Char('.');
+            Parser<char, Fluent.Char.ParseContext, char> Plus = Literals.Char('+');
+            Parser<char, Fluent.Char.ParseContext, char> Minus = Literals.Char('-');
+            Parser<char, Fluent.Char.ParseContext, char> At = Literals.Char('@');
+            Parser<BufferSpan<char>, Fluent.Char.ParseContext, char> WordChar = Terms.Pattern(char.IsLetterOrDigit);
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Plus, Minus));
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Minus));
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Minus));
+            Parser<BufferSpan<char>, Fluent.Char.ParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
 
             string _email = "sebastien.ros@gmail.com";
 
@@ -270,7 +270,7 @@ namespace Parlot.Tests
             Assert.Equal(_email, result.ToString());
         }
 
-        private sealed class NonCompilableCharLiteral : Parser<char, StringParseContext, char>
+        private sealed class NonCompilableCharLiteral : Parser<char, Fluent.Char.ParseContext, char>
         {
             public NonCompilableCharLiteral(char c, bool skipWhiteSpace = true)
             {
@@ -285,7 +285,7 @@ namespace Parlot.Tests
             public override bool Serializable => true;
             public override bool SerializableWithoutValue => true;
 
-            public override bool Parse(StringParseContext context, ref ParseResult<char> result)
+            public override bool Parse(Fluent.Char.ParseContext context, ref ParseResult<char> result)
             {
                 context.EnterParser(this);
 
@@ -328,7 +328,7 @@ namespace Parlot.Tests
             var a = Literals.Char('a');
             var b = Literals.Decimal();
 
-            var o2 = a.Or<char, decimal, object, StringParseContext, char>(b).Compile();
+            var o2 = a.Or<char, decimal, object, Fluent.Char.ParseContext, char>(b).Compile();
 
             Assert.True(o2.TryParse("a", out var c) && (char)c == 'a');
             Assert.True(o2.TryParse("1", out var d) && (decimal)d == 1);
@@ -594,21 +594,21 @@ namespace Parlot.Tests
 
             Assert.True(
                 SkipWhiteSpace(Literals.Text("ab")).Compile()
-                .TryParse(new StringParseContext((" \nab"), useNewLines: false),
+                .TryParse(new Fluent.Char.ParseContext((" \nab"), useNewLines: false),
                 out var _, out var _));
 
             // Here newlines are not skipped
 
             Assert.False(
                 SkipWhiteSpace(Literals.Text("ab")).Compile()
-                .TryParse(new StringParseContext((" \nab"), useNewLines: true),
+                .TryParse(new Fluent.Char.ParseContext((" \nab"), useNewLines: true),
                 out var _, out var _));
 
             // Here newlines are not skipped, and the grammar reads them explicitly
 
             Assert.True(
                 SkipWhiteSpace(Literals.WhiteSpace(includeNewLines: true).SkipAnd(Literals.Text("ab"))).Compile()
-                .TryParse(new StringParseContext(" \nab", useNewLines: true),
+                .TryParse(new Fluent.Char.ParseContext(" \nab", useNewLines: true),
                 out var _, out var _));
         }
 
@@ -626,15 +626,15 @@ namespace Parlot.Tests
         [Fact]
         public void CanCompileSubTree()
         {
-            Parser<char, StringParseContext, char> Dot = Literals.Char('.');
-            Parser<char, StringParseContext, char> Plus = Literals.Char('+');
-            Parser<char, StringParseContext, char> Minus = Literals.Char('-');
-            Parser<char, StringParseContext, char> At = Literals.Char('@');
-            Parser<BufferSpan<char>, StringParseContext, char> WordChar = Literals.Pattern(char.IsLetterOrDigit).Compile();
-            Parser<List<char>, StringParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Plus, Minus));
-            Parser<List<char>, StringParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Minus));
-            Parser<List<char>, StringParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Minus));
-            Parser<BufferSpan<char>, StringParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
+            Parser<char, Fluent.Char.ParseContext, char> Dot = Literals.Char('.');
+            Parser<char, Fluent.Char.ParseContext, char> Plus = Literals.Char('+');
+            Parser<char, Fluent.Char.ParseContext, char> Minus = Literals.Char('-');
+            Parser<char, Fluent.Char.ParseContext, char> At = Literals.Char('@');
+            Parser<BufferSpan<char>, Fluent.Char.ParseContext, char> WordChar = Literals.Pattern(char.IsLetterOrDigit).Compile();
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Plus, Minus));
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Dot, Minus));
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Then(x => 'w'), Minus));
+            Parser<BufferSpan<char>, Fluent.Char.ParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
 
             string _email = "sebastien.ros@gmail.com";
 

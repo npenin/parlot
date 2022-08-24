@@ -10,7 +10,7 @@ namespace Parlot.Fluent.Char
 
         private readonly Parser<T, TParseContext, char> _parser;
 
-        internal static readonly bool canUseNewLines = typeof(StringParseContext).IsAssignableFrom(typeof(TParseContext));
+        internal static readonly bool canUseNewLines = typeof(Char.ParseContext).IsAssignableFrom(typeof(TParseContext));
 
         public SkipWhiteSpace(Parser<T, TParseContext, char> parser)
         {
@@ -32,7 +32,7 @@ namespace Parlot.Fluent.Char
             var start = context.Scanner.Cursor.Position;
 
             // Use the scanner's logic to ignore whitespaces since it knows about multi-line grammars
-            if (!canUseNewLines || ((StringParseContext)(object)context).UseNewLines)
+            if (!canUseNewLines || ((Char.ParseContext)(object)context).UseNewLines)
                 context.Scanner.SkipWhiteSpace();
             else
                 context.Scanner.SkipWhiteSpaceOrNewLine();

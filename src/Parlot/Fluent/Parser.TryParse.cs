@@ -79,19 +79,19 @@ namespace Parlot.Fluent
 
     public static class ParserExtensions
     {
-        public static T Parse<T>(this Parser<T, StringParseContext, char> parser, string text)
+        public static T Parse<T>(this Parser<T, Char.ParseContext, char> parser, string text)
         {
-            return parser.Parse(new StringParseContext(new Scanner<char>(text.ToCharArray())));
+            return parser.Parse(new Char.ParseContext(new Scanner<char>(text.ToCharArray())));
         }
 
-        public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value)
+        public static bool TryParse<TResult>(this Parser<TResult, Char.ParseContext, char> parser, string text, out TResult value)
         {
             return parser.TryParse(text, out value, out _);
         }
 
-        public static bool TryParse<TResult>(this Parser<TResult, StringParseContext, char> parser, string text, out TResult value, out ParseError error)
+        public static bool TryParse<TResult>(this Parser<TResult, Char.ParseContext, char> parser, string text, out TResult value, out ParseError error)
         {
-            return parser.TryParse(new StringParseContext(new Scanner<char>(text.ToCharArray())), out value, out error);
+            return parser.TryParse(new Char.ParseContext(new Scanner<char>(text.ToCharArray())), out value, out error);
         }
 
         public static bool TryParse<TResult, TParseContext, TChar>(this Parser<TResult, TParseContext, TChar> parser, TParseContext context, out TResult value)

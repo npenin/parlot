@@ -21,7 +21,7 @@ namespace Parlot.Benchmarks
         private string _longJson;
         private string _wideJson;
         private string _deepJson;
-        private Parser<IJson, StringParseContext, char> _compiled;
+        private Parser<IJson, Fluent.Char.ParseContext, char> _compiled;
 #nullable restore
 
         private static JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings() { MaxDepth = 1024 };

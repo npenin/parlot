@@ -1,12 +1,11 @@
 ﻿using Parlot.Fluent;
-using Parlot.Fluent.Char;
 using Parlot.Rewriting;
 
 namespace Parlot.Tests.Models
 {
     public partial class RewriteTests
     {
-        public sealed class FakeSeekable : Parser<string, StringParseContext, char>, ISeekable<char>
+        public sealed class FakeSeekable : Parser<string, Fluent.Char.ParseContext, char>, ISeekable<char>
         {
             public FakeSeekable()
             {
@@ -23,7 +22,7 @@ namespace Parlot.Tests.Models
 
             public override bool SerializableWithoutValue => false;
 
-            public override bool Parse(StringParseContext context, ref ParseResult<string> result)
+            public override bool Parse(Fluent.Char.ParseContext context, ref ParseResult<string> result)
             {
                 context.EnterParser(this);
 

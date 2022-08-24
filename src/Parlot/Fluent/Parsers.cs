@@ -106,6 +106,11 @@ namespace Parlot.Fluent
         /// </summary>
         public static Parser<TChar, TParseContext, TChar> Char(TChar c) => new CharLiteral<TChar, TParseContext>(c);
 
+        /// <summary>
+        /// Builds a parser that matches the specified char.
+        /// </summary>
+        public static Parser<U, TParseContext, TChar> Switch<T, U>(Parser<T, TParseContext, TChar> previousParser, Func<TParseContext, T, Parser<U, TParseContext, TChar>> action, Func<U, T> reverseAction = null) => new Switch<T, U, TParseContext, TChar>(previousParser, action, reverseAction);
+
     }
 
     //     public class LiteralBuilder

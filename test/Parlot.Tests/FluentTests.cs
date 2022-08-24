@@ -3,7 +3,7 @@ using Parlot.Fluent;
 using Parlot.Fluent.Char;
 using System.Collections.Generic;
 using Xunit;
-using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.StringParseContext>;
+using static Parlot.Fluent.Char.Parsers<Parlot.Fluent.Char.ParseContext>;
 
 namespace Parlot.Tests
 {
@@ -237,25 +237,25 @@ namespace Parlot.Tests
         [Fact]
         public void ScopeShouldAllowScopedParserContext()
         {
-            var a = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Literals.Char('a');
-            var b = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Literals.Char('b');
-            var c = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Literals.Char('c');
+            var a = Fluent.Char.Parsers<Fluent.ParseContext.Untyped<char>>.Literals.Char('a');
+            var b = Fluent.Char.Parsers<Fluent.ParseContext.Untyped<char>>.Literals.Char('b');
+            var c = Fluent.Char.Parsers<Fluent.ParseContext.Untyped<char>>.Literals.Char('c');
 
-            var o2 = Fluent.Char.Parsers<ParseContext.Untyped<char>>.Scope(
+            var o2 = Fluent.Char.Parsers<Fluent.ParseContext.Untyped<char>>.Scope(
                     a.Then((c, t) => { c.Set("lorem", "ipsum"); return "lorem"; })
                     .And(b).Then((c, t) => c.Get<string>(t.Item1)));
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
-            Assert.False(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("a".AsSpan())), out _));
-            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out var result));
+            Assert.IsType<ScopedParser<string, Fluent.ParseContext.Untyped<char>, char>>(o2);
+            Assert.False(o2.TryParse(new Fluent.ParseContext.Untyped<char>(new Scanner<char>("a".AsSpan())), out _));
+            Assert.True(o2.TryParse(new Fluent.ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out var result));
             Assert.Equal("ipsum", result);
 
             o2 = Scope(
                     a.Then((c, t) => "lorem")
                     .And(b).Then((c, t) => c.Get<string>(t.Item1)));
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, Fluent.ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new Fluent.ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out result));
             Assert.Null(result);
 
 
@@ -263,8 +263,8 @@ namespace Parlot.Tests
                     a.Then((c, t) => c.Set("lorem", "ipsum"))
                     .SkipAnd(Scope(b.Then((c, t) => c.Get<string>("lorem")))));
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, Fluent.ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new Fluent.ParseContext.Untyped<char>(new Scanner<char>("ab".ToCharArray())), out result));
             Assert.Equal("ipsum", result);
 
             o2 = Scope(
@@ -273,8 +273,8 @@ namespace Parlot.Tests
                     .SkipAnd(c.Then((c, t) => c.Get<string>("lorem")))
                     );
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("abc".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, Fluent.ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new Fluent.ParseContext.Untyped<char>(new Scanner<char>("abc".ToCharArray())), out result));
             Assert.Equal("ipsumipsum", result);
 
             o2 = Scope(
@@ -283,8 +283,8 @@ namespace Parlot.Tests
                     .SkipAnd(c.Then((c, t) => c.Get<string>("lorem2")))
                     );
 
-            Assert.IsType<ScopedParser<string, ParseContext.Untyped<char>, char>>(o2);
-            Assert.True(o2.TryParse(new ParseContext.Untyped<char>(new Scanner<char>("abc".ToCharArray())), out result));
+            Assert.IsType<ScopedParser<string, Fluent.ParseContext.Untyped<char>, char>>(o2);
+            Assert.True(o2.TryParse(new Fluent.ParseContext.Untyped<char>(new Scanner<char>("abc".ToCharArray())), out result));
             Assert.Null(result);
         }
 
@@ -298,12 +298,12 @@ namespace Parlot.Tests
             var o2 = a.Or(b);
             var o3 = a.Or(b).Or(c);
 
-            Assert.IsType<OneOf<char, StringParseContext, char>>(o2);
+            Assert.IsType<OneOf<char, Fluent.Char.ParseContext, char>>(o2);
             Assert.True(o2.TryParse("a", out _));
             Assert.True(o2.TryParse("b", out _));
             Assert.False(o2.TryParse("c", out _));
 
-            Assert.IsType<OneOf<char, StringParseContext, char>>(o3);
+            Assert.IsType<OneOf<char, Fluent.Char.ParseContext, char>>(o3);
             Assert.True(o3.TryParse("a", out _));
             Assert.True(o3.TryParse("b", out _));
             Assert.True(o3.TryParse("c", out _));
@@ -316,9 +316,9 @@ namespace Parlot.Tests
             var a = Literals.Char('a');
             var b = Literals.Decimal();
 
-            var o2 = a.Or<char, decimal, object, StringParseContext, char>(b);
+            var o2 = a.Or<char, decimal, object, Fluent.Char.ParseContext, char>(b);
 
-            Assert.IsType<OneOf<char, decimal, object, StringParseContext, char>>(o2);
+            Assert.IsType<OneOf<char, decimal, object, Fluent.Char.ParseContext, char>>(o2);
             Assert.True(o2.TryParse("a", out var c) && (char)c == 'a');
             Assert.True(o2.TryParse("1", out var d) && (decimal)d == 1);
         }
@@ -335,27 +335,27 @@ namespace Parlot.Tests
             var s6 = s5.And(a);
             var s7 = s6.And(a);
 
-            Assert.IsType<Sequence<char, char, StringParseContext, char>>(s2);
+            Assert.IsType<Sequence<char, char, Fluent.Char.ParseContext, char>>(s2);
             Assert.False(s2.TryParse("a", out _));
             Assert.True(s2.TryParse("aab", out _));
 
-            Assert.IsType<Sequence<char, char, char, StringParseContext, char>>(s3);
+            Assert.IsType<Sequence<char, char, char, Fluent.Char.ParseContext, char>>(s3);
             Assert.False(s3.TryParse("aa", out _));
             Assert.True(s3.TryParse("aaab", out _));
 
-            Assert.IsType<Sequence<char, char, char, char, StringParseContext, char>>(s4);
+            Assert.IsType<Sequence<char, char, char, char, Fluent.Char.ParseContext, char>>(s4);
             Assert.False(s4.TryParse("aaa", out _));
             Assert.True(s4.TryParse("aaaab", out _));
 
-            Assert.IsType<Sequence<char, char, char, char, char, StringParseContext, char>>(s5);
+            Assert.IsType<Sequence<char, char, char, char, char, Fluent.Char.ParseContext, char>>(s5);
             Assert.False(s5.TryParse("aaaa", out _));
             Assert.True(s5.TryParse("aaaaab", out _));
 
-            Assert.IsType<Sequence<char, char, char, char, char, char, StringParseContext, char>>(s6);
+            Assert.IsType<Sequence<char, char, char, char, char, char, Fluent.Char.ParseContext, char>>(s6);
             Assert.False(s6.TryParse("aaaaa", out _));
             Assert.True(s6.TryParse("aaaaaab", out _));
 
-            Assert.IsType<Sequence<char, char, char, char, char, char, char, StringParseContext, char>>(s7);
+            Assert.IsType<Sequence<char, char, char, char, char, char, char, Fluent.Char.ParseContext, char>>(s7);
             Assert.False(s7.TryParse("aaaaaa", out _));
             Assert.True(s7.TryParse("aaaaaaab", out _));
         }
@@ -518,15 +518,15 @@ namespace Parlot.Tests
         [Fact]
         public void ShouldParseEmails()
         {
-            Parser<char, StringParseContext, char> Dot = Literals.Char('.');
-            Parser<char, StringParseContext, char> Plus = Literals.Char('+');
-            Parser<char, StringParseContext, char> Minus = Literals.Char('-');
-            Parser<char, StringParseContext, char> At = Literals.Char('@');
-            Parser<BufferSpan<char>, StringParseContext, char> WordChar = Terms.Pattern(char.IsLetterOrDigit);
-            Parser<List<char>, StringParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Discard<char>(), Dot, Plus, Minus));
-            Parser<List<char>, StringParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Discard<char>(), Dot, Minus));
-            Parser<List<char>, StringParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Discard<char>(), Minus));
-            Parser<BufferSpan<char>, StringParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
+            Parser<char, Fluent.Char.ParseContext, char> Dot = Literals.Char('.');
+            Parser<char, Fluent.Char.ParseContext, char> Plus = Literals.Char('+');
+            Parser<char, Fluent.Char.ParseContext, char> Minus = Literals.Char('-');
+            Parser<char, Fluent.Char.ParseContext, char> At = Literals.Char('@');
+            Parser<BufferSpan<char>, Fluent.Char.ParseContext, char> WordChar = Terms.Pattern(char.IsLetterOrDigit);
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordDotPlusMinus = OneOrMany(OneOf(WordChar.Discard<char>(), Dot, Plus, Minus));
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordDotMinus = OneOrMany(OneOf(WordChar.Discard<char>(), Dot, Minus));
+            Parser<List<char>, Fluent.Char.ParseContext, char> WordMinus = OneOrMany(OneOf(WordChar.Discard<char>(), Minus));
+            Parser<BufferSpan<char>, Fluent.Char.ParseContext, char> Email = Capture(WordDotPlusMinus.And(At).And(WordMinus).And(Dot).And(WordDotMinus));
 
             string _email = "sebastien.ros@gmail.com";
 
@@ -721,21 +721,21 @@ namespace Parlot.Tests
 
             Assert.True(
                 SkipWhiteSpace(Literals.Text("ab"))
-                .TryParse(new StringParseContext(" \nab", useNewLines: false),
+                .TryParse(new Fluent.Char.ParseContext(" \nab", useNewLines: false),
                 out var _, out var _));
 
             // Here newlines are not skipped
 
             Assert.False(
                 SkipWhiteSpace(Literals.Text("ab"))
-                .TryParse(new StringParseContext(" \nab", useNewLines: true),
+                .TryParse(new Fluent.Char.ParseContext(" \nab", useNewLines: true),
                 out var _, out var _));
 
             // Here newlines are not skipped, and the grammar reads them explicitly
 
             Assert.True(
                 SkipWhiteSpace(Literals.WhiteSpace(includeNewLines: true).SkipAnd(Literals.Text("ab")))
-                .TryParse(new StringParseContext(" \nab", useNewLines: true),
+                .TryParse(new Fluent.Char.ParseContext(" \nab", useNewLines: true),
                 out var _, out var _));
         }
     }

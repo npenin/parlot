@@ -25,7 +25,6 @@ namespace Parlot.Fluent
         public override bool Parse(TParseContext context, ref ParseResult<T> result)
         {
             context.EnterParser(this);
-
             if (!_parser.Parse(context, ref result))
             {
                 throw new ParseException(_message, context.Scanner.Cursor.Position);

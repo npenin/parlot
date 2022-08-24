@@ -23,7 +23,7 @@ namespace Parlot.Fluent
         internal readonly Dictionary<TChar, List<Parser<T, TParseContext, TChar>>> _lookupTable;
         internal readonly bool _skipWhiteSpace;
 
-        private static bool canUseNewLines = typeof(StringParseContext).IsAssignableFrom(typeof(TParseContext));
+        private static bool canUseNewLines = typeof(Char.ParseContext).IsAssignableFrom(typeof(TParseContext));
 
         public OneOf(Parser<T, TParseContext, TChar>[] parsers)
         {
@@ -91,7 +91,7 @@ namespace Parlot.Fluent
                     {
                         if (canUseNewLines)
                         {
-                            var stringContext = (StringParseContext)(object)context;
+                            var stringContext = (Char.ParseContext)(object)context;
                             if (stringContext.UseNewLines)
                                 stringContext.Scanner.SkipWhiteSpace();
                             else
