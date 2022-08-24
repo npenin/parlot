@@ -37,26 +37,6 @@ public class ProtoParser
             Repeated = t.Item1 == "repeated",
             Optional = t.Item1 == "optional",
             Required = t.Item1 == "required",
-            TypeCode = t.Item2 switch
-            {
-                "double" => TypeCode.Double,
-                "float" => TypeCode.Float,
-                "int32" => TypeCode.Int32,
-                "int64" => TypeCode.Int64,
-                "uint32" => TypeCode.UInt32,
-                "uint64" => TypeCode.UInt64,
-                "sint32" => TypeCode.Int32,
-                "sint64" => TypeCode.Int64,
-                "fixed32" => TypeCode.Int32,
-                "fixed64" => TypeCode.Int64,
-                "sfixed32" => TypeCode.Int32,
-                "sfixed64" => TypeCode.Int64,
-                "bool" => TypeCode.Boolean,
-                "string" => TypeCode.String,
-                "bytes" => TypeCode.Bytes,
-                var x when x.StartsWith("map<") => TypeCode.Map,
-                _ => TypeCode.Declaration
-            },
             Type = t.Item2,
             IsFixedSize = t.Item2.Contains("fixed"),
             Name = t.Item3.ToString(),
@@ -88,7 +68,7 @@ public class ProtoParser
             .Then(t => new OneOf
             {
                 Name = t.Item1.ToString(),
-                Possibilities = t.Item2.Select(v => new Property { Index = (uint)v.Item3, Name = v.Item1.ToString(), Type = v.Item2.ToString() }).ToList()
+                Possibilities = t.Item2.Select(v => new Property { Index = (uint)v.Item3, Name = v.Item2.ToString(), Type = v.Item1.ToString() }).ToList()
             });
         ;
 

@@ -37,7 +37,7 @@ namespace Parlot.Protobuf
                 return Values;
             if (MessageValues != null)
                 return MessageValues;
-            throw new NotSupportedException("There is no value");
+            throw new NotSupportedException("There is no value in " + this.Definition.Name);
         }
     }
 }

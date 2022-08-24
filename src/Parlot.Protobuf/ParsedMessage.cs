@@ -45,9 +45,8 @@ public class ParsedMessage : DynamicObject
 
     public override IEnumerable<string> GetDynamicMemberNames()
     {
-        System.Console.WriteLine("GetDynamicMemberNames");
         if (Definition.OneOf != null)
-            return new[] { Definition.OneOf.Name };
+            return Definition.OneOf.Possibilities.Select(p => p.Name);
         return Definition.Properties.Select(p => p.Name);
     }
 

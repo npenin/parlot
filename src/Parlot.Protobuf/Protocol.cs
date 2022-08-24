@@ -69,54 +69,71 @@ public class Protocol
         }
     }
 
-    public static Parser<ParsedValue, ParseContext, byte> PropertyParser(Property p, Dictionary<string, Deferred<ParsedMessage, ParseContext, byte>> parsers)
-    {
-        ulong prefix = p.Index << 3;
-        switch (p.TypeCode)
-        {
-            case TypeCode.Float:
-            case TypeCode.Fixed32:
-            case TypeCode.Sfixed32:
-                prefix = prefix | 0x5;
-                break;
-            case TypeCode.Double:
-            case TypeCode.Fixed64:
-            case TypeCode.Sfixed64:
-                prefix = prefix | 0x1;
-                break;
-            case TypeCode.String:
-                prefix = prefix | 0x2;
-                break;
-            case TypeCode.Bytes:
-                prefix = prefix | 0x2;
-                break;
-            case TypeCode.Declaration:
-                if (p.Declaration is not Enum<ulong>)
-                    prefix = prefix | 0x2;
-                break;
-                // case TypeCode.Map:
-                //     prefix = prefix | 0x;
-                //     break;
-        }
-
-        return new VarUInt<ParseContext>().When(v => v == prefix).SkipAnd(TypeParser(p, parsers).ElseError("failed to parse property " + p.Name));
-    }
-
-
     public IDictionary<string, Parlot.Fluent.Deferred<ParsedMessage, ParseContext, byte>> BuildParsers()
     {
         var parsers = Declarations.Where(d => d is not Enum<ulong>).ToDictionary(d => d.Name, (d) => Parsers.Deferred<ParsedMessage>());
         foreach (var m in Declarations.OfType<Message>())
         {
             if (m.OneOf == null)
-                parsers[m.Name].Parser = AllOf(true, m.Properties.Where(p => p.Required).Select(p => PropertyParser(p, parsers)).ToArray())
-                .And(AllOf(true, m.Properties.Where(p => p.Repeated).Select(p => ZeroOrMany(PropertyParser(p, parsers)).Then(values => new ParsedValue { Definition = p, Values = values.Select(v => v.Value).ToArray(), MessageValues = values.Select(v => v.MessageValue).ToArray() })).ToArray()))
-                .And(AllOf(true, m.Properties.Where(p => p.Optional).Select(p => ZeroOrOne(PropertyParser(p, parsers))).ToArray()))
-                .Then(t => new ParsedMessage { Definition = m, Values = t.Item1.Union(t.Item2).Union(t.Item3.Where(p => p != null)).ToList() });
+                parsers[m.Name].Parser = ZeroOrMany(Parsers.Switch(new VarUInt<ParseContext>(), (c, prefix) =>
+                {
+                    var wireType = prefix & 0x7;
+                    var propertyIndex = prefix >> 3;
+                    // System.Console.WriteLine($"message: {m.Name}, wireType:{wireType}, index:{propertyIndex}");
+                    // System.Console.WriteLine(string.Join(", ", m.Properties.Select(p => p.Index + ":" + p.Name)));
+                    switch (wireType)
+                    {
+                        case 0:
+                            return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = m.Properties.First(p => p.Index == propertyIndex), Value = v });
+                        case 2:
+                        case 1:
+                        case 5:
+                            return m.Properties.Where(p => p.Index == propertyIndex && p.WireType == wireType).Select(p => TypeParser(p, parsers)
+                            // .Then(x => Console.WriteLine("successfully parsed property " + p.Name))
+                            .ElseError("Failed to parse property " + p.Name)).First();
+                    }
+                    return m.Properties.Where(p => p.Index == propertyIndex).Select(p => TypeParser(p, parsers)
+                        // .Then(x => Console.WriteLine("successfully parsed property " + p.Name))
+                        .ElseError("Failed to parse property " + p.Name)).First();
+                }))
+                // m.Properties.Where(p => p.Required).Select(p => PropertyParser(p, parsers)).ToArray())
+                // .And(AllOf(true, m.Properties.Where(p => p.Repeated).Select(p => ZeroOrMany(PropertyParser(p, parsers)).Then(values => new ParsedValue
+                //  {
+                //      Definition = p,
+                //      Values = values.Select(v => v.Value).ToArray(),
+                //      MessageValues = values.Select(v => v.MessageValue).ToArray()
+                //  })).ToArray()))
+                // .And(AllOf(true, m.Properties.Where(p => p.Optional).Select(p => ZeroOrOne(PropertyParser(p, parsers))).ToArray()))
+                .Then(t => new ParsedMessage { Definition = m, Values = t })
+                // .Then(c => System.Console.WriteLine($"read {m.Name} message"))
+                ;
             else
-                parsers[m.Name].Parser = OneOf(m.OneOf.Possibilities.Select(p => TypeParser(p, parsers).Then(p => p.MessageValue)).ToArray());
-        }
+                parsers[m.Name].Parser = Parsers.Switch(new VarUInt<ParseContext>(), (c, prefix) =>
+                {
+                    var wireType = prefix & 0x7;
+                    var propertyIndex = prefix >> 3;
+                    // System.Console.WriteLine($"oneof message: {m.Name}.{m.OneOf.Name}, wireType:{wireType}, index:{propertyIndex}");
+                    // System.Console.WriteLine(string.Join(", ", m.OneOf.Possibilities.Select(p => p.Index + ":" + p.Name + "(wireType:" + p.WireType + ", Type:" + p.Type + ")")));
+                    switch (wireType)
+                    {
+                        case 0:
+                            return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = m.OneOf.Possibilities.First(p => p.Index == propertyIndex), Value = v });
+                        case 2:
+                        case 1:
+                        case 5:
+                            return m.OneOf.Possibilities.Where(p => p.Index == propertyIndex && p.WireType == wireType).Select(p => TypeParser(p, parsers)
+                            // .Then(x => Console.WriteLine("successfully parsed property " + p.Name))
+                            .ElseError("Failed to parse property " + p.Name)).First();
+                    }
+                    return m.OneOf.Possibilities.Where(p => p.Index == propertyIndex).Select(p => TypeParser(p, parsers)
+                    // .Then(x => Console.WriteLine("successfully parsed property " + p.Name))
+                    .ElseError("Failed to parse property " + p.Name)).First();
+                })
+                .Then(v => new ParsedMessage { Definition = m, Values = new() { v } })
+                // .Then(c => System.Console.WriteLine($"read {m.Name} oneof message"))
+                ;
 
+        }
         return parsers;
     }
 
