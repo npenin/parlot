@@ -6,7 +6,8 @@ using Parlot.Fluent;
 public class VarUInt<TParseContext> : Parlot.Fluent.Parser<ulong, TParseContext, byte>
     where TParseContext : ParseContextWithScanner<byte>
 {
-    private const byte mask = 0x70;
+    private const byte overbyteMask = 0x80;
+    private const byte mask = 0x7f;
 
     public override bool Serializable => true;
 
@@ -20,19 +21,21 @@ public class VarUInt<TParseContext> : Parlot.Fluent.Parser<ulong, TParseContext,
         var reset = context.Scanner.Cursor.Position;
         var start = reset.Offset;
 
-        var b = context.Scanner.ReadSingle();
-        ulong bytes = b;
-        for (var n = 0; (b & mask) == mask && n < 8; n++)
+        if (!context.Scanner.TryReadSingle(out var b))
         {
-            if (n > 0)
-            {
-                bytes <<= 7;
-                bytes |= b;
-            }
-            else
-                bytes = b;
+            // System.Console.WriteLine("eof reached");
+            return false;
         }
-
+        // System.Console.WriteLine("read {0:X2}", b);
+        ulong bytes = (ulong)(b & mask);
+        for (var n = 1; (b & overbyteMask) == overbyteMask && n < 8; n++)
+        {
+            if (!context.Scanner.TryReadSingle(out b))
+                break;
+            // System.Console.WriteLine("read {0:X2}", b);
+            bytes |= ((ulong)((byte)(b & mask)) << 7 * n);
+        }
+        // System.Console.WriteLine("final value: {0}", bytes);
         result.Set(start, context.Scanner.Cursor.Position.Offset, bytes);
         return true;
 

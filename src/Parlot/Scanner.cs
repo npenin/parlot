@@ -114,11 +114,17 @@ namespace Parlot
         /// Reads 1 <typeparamref name="TChar"/>
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TChar ReadSingle()
+        public bool TryReadSingle(out TChar item)
         {
+            if (Cursor.Eof)
+            {
+                item = default;
+                return false;
+            }
             var current = Cursor.Current;
             Cursor.Advance();
-            return current;
+            item = current;
+            return true;
         }
 
 
