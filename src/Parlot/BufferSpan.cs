@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Parlot
 {
-    public readonly struct BufferSpan<T> : IEquatable<T[]>, IEquatable<BufferSpan<T>>
+    public readonly struct BufferSpan<T> : IEquatable<T[]>, IEquatable<BufferSpan<T>>, IEnumerable<T>
     where T : IEquatable<T>
     {
         public BufferSpan(T[] buffer, int offset = 0, int count = -1)
@@ -54,6 +56,30 @@ namespace Parlot
                 if (Buffer == null)
                     return null;
                 return new string((char[])(object)Buffer, Offset, Length);
+            }
+            if (typeof(T) == typeof(byte))
+            {
+                if (Buffer == null)
+                    return null;
+                StringBuilder sb = new StringBuilder();
+                var offsetLength = Offset + Length;
+                var isFirstLine = true;
+                for (var i = Offset - (Offset & 0xF); i < offsetLength; i++)
+                {
+                    if (i > 0 && (i & 0xF) == 0)
+                        if (isFirstLine)
+                            isFirstLine = false;
+                        else
+                            sb.Append(Environment.NewLine);
+                    else
+                        isFirstLine = false;
+                    if (i < Offset)
+                        sb.Append("  ");
+                    else
+                        sb.Append(Convert.ToByte(Buffer[i]).ToString("X2"));
+                    sb.Append(' ');
+                }
+                return sb.ToString();
             }
             return base.ToString();
         }
@@ -122,6 +148,20 @@ namespace Parlot
             // #else
             //             return Span.IndexOf(startChar, startOffset, end);
             // #endif
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (var i = Offset; i < Length; i++)
+            {
+                yield return Buffer[i];
+            }
+            yield break;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
