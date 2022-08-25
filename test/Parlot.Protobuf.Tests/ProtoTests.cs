@@ -3,6 +3,7 @@ using Xunit;
 using Parlot.Fluent;
 using System;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace Parlot.Tests.Calc
 {
@@ -129,6 +130,21 @@ message OpBinary {
                 Assert.True(b.Value is ulong);
         }
 
+
+        [Fact]
+        public void ShouldSerializeSimpleMessage1()
+        {
+            Assert.True(Protobuf.ProtoParser.MessageParser.TryParse(new Protobuf.FileParseContext(@"message Test1 {
+  optional int32 a = 1;
+        }"), out var mp));
+            var p = new Protobuf.Protocol { Declarations = { mp } };
+            Assert.NotNull(p);
+            var parsers = p.Build().BuildParsers();
+            var sb = new BytesBuilder();
+            parsers["Test1"].Serialize(sb, new Protobuf.ParsedMessage { Definition = mp, Values = new() { new Protobuf.ParsedValue { Value = (ulong)150, Definition = mp.Properties[0] } } });
+            Assert.Equal(new byte[] { 0x08, 0x96, 0x01 }, sb.FlattenBlocks());
+        }
+
         [Fact]
         public void ShouldParseSimpleMessage2()
         {
@@ -150,6 +166,21 @@ message OpBinary {
             else
                 Assert.True(b.Value is string);
         }
+
+        [Fact]
+        public void ShouldSerializeSimpleMessage2()
+        {
+            Assert.True(Protobuf.ProtoParser.MessageParser.TryParse(new Protobuf.FileParseContext(@"message Test2 {
+  optional string b = 2;
+        }"), out var mp));
+            var p = new Protobuf.Protocol { Declarations = { mp } };
+            Assert.NotNull(p);
+            var parsers = p.Build().BuildParsers();
+            var sb = new BytesBuilder();
+            parsers["Test2"].Serialize(sb, new Protobuf.ParsedMessage { Definition = mp, Values = new() { new Protobuf.ParsedValue { Value = "testing", Definition = mp.Properties[0] } } });
+            Assert.Equal(new byte[] { 0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67 }, sb.FlattenBlocks());
+        }
+
 
         [Fact]
         public void ShouldParseSimpleMessage3()
@@ -179,6 +210,39 @@ message OpBinary {
                 Assert.Equal(150, (int)s);
             else
                 Assert.True(b.Value is ulong);
+        }
+
+
+        [Fact]
+        public void ShouldSerializeSimpleMessage3()
+        {
+            Assert.True(Parsers<Protobuf.FileParseContext, char>.OneOrMany(Protobuf.ProtoParser.MessageParser).TryParse(new Protobuf.FileParseContext(@"message Test1 {
+  optional int32 a = 1;
+        }
+        
+        message Test3 {
+  optional Test1 c = 3;
+}"), out var mp));
+            var test1 = mp.First(mp => mp.Name == "Test1");
+            var test3 = mp.First(mp => mp.Name == "Test3");
+            var p = new Protobuf.Protocol();
+            p.Declarations.AddRange(mp);
+            Assert.NotNull(p);
+            var parsers = p.Build().BuildParsers();
+            var sb = new BytesBuilder();
+            parsers["Test3"].Serialize(sb, new Protobuf.ParsedMessage
+            {
+                Definition = test3,
+                Values = new() {
+                    new Protobuf.ParsedValue {
+                        MessageValue = new Protobuf.ParsedMessage {
+                            Definition = test1,
+                            Values = new() { new Protobuf.ParsedValue{ Value=(ulong)150, Definition=test1.Properties[0]}}
+                        }, Definition = test3.Properties[0]
+                    }
+                }
+            });
+            Assert.Equal(new byte[] { 0x1a, 0x03, 0x08, 0x96, 0x01 }, sb.FlattenBlocks());
         }
     }
 }

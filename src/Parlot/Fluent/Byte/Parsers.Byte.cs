@@ -199,7 +199,7 @@ namespace Parlot.Fluent.Byte
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Parser<BufferSpan<byte>, TParseContext, byte> Buffer<T>(Parser<T, TParseContext, byte> length)
             where T : IConvertible
-        => Buffer(length.Then(t => t.ToUInt64(null)));
+        => Buffer(length.Then(t => t.ToUInt64(null), l => (T)Convert.ChangeType(l, typeof(T))));
 
     }
 }

@@ -68,6 +68,11 @@ namespace Parlot
             }
             return flatten;
         }
+
+        public BufferSpan<T> ToBufferSpan()
+        {
+            return new BufferSpan<T>(FlattenBlocks());
+        }
     }
 
     public class StringBuilder : BufferSpanBuilder<char>

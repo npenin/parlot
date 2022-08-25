@@ -42,11 +42,19 @@ public class VarUInt<TParseContext> : Parlot.Fluent.Parser<ulong, TParseContext,
         // context.Scanner.Cursor.ResetPosition(reset);
 
         // return false;
-
     }
 
     public override bool Serialize(BufferSpanBuilder<byte> sb, ulong value)
     {
-        throw new System.NotImplementedException();
+        // System.Console.WriteLine("serializing " + value);
+        while (value > (value & mask))
+        {
+            sb.Append((byte)(value & mask | overbyteMask));
+            value >>= 7;
+            // System.Console.WriteLine("remaining " + value);
+        }
+
+        sb.Append((byte)(value & mask));
+        return true;
     }
 }

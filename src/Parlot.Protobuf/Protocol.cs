@@ -34,36 +34,37 @@ public class Protocol
         switch (p.TypeCode)
         {
             case TypeCode.Double:
-                return Double().Then(v => new ParsedValue { Definition = p, Value = v });
+                return Double().Then(v => new ParsedValue { Definition = p, Value = v }, v => (double)v.Value);
             case TypeCode.Float:
-                return Float().Then(v => new ParsedValue { Definition = p, Value = v });
+                return Float().Then(v => new ParsedValue { Definition = p, Value = v }, v => (float)v.Value);
             case TypeCode.SInt32:
             case TypeCode.SInt64:
-                return new VarInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v });
+                return new VarInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v }, v => (long)v.Value);
             case TypeCode.Int32:
             case TypeCode.Int64:
             case TypeCode.UInt32:
             case TypeCode.UInt64:
-                return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v });
+                return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v }, v => (ulong)v.Value);
             case TypeCode.Fixed32:
-                return UInt32().Then(v => new ParsedValue { Definition = p, Value = v });
+                return UInt32().Then(v => new ParsedValue { Definition = p, Value = v }, v => (uint)v.Value);
             case TypeCode.Fixed64:
-                return UInt64().Then(v => new ParsedValue { Definition = p, Value = v });
+                return UInt64().Then(v => new ParsedValue { Definition = p, Value = v }, v => (ulong)v.Value);
             case TypeCode.Sfixed32:
-                return Int32().Then(v => new ParsedValue { Definition = p, Value = v });
+                return Int32().Then(v => new ParsedValue { Definition = p, Value = v }, v => (int)v.Value);
             case TypeCode.Sfixed64:
-                return Int64().Then(v => new ParsedValue { Definition = p, Value = v });
+                return Int64().Then(v => new ParsedValue { Definition = p, Value = v }, v => (long)v.Value);
             case TypeCode.Boolean:
+                return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v != 0 }, v => unchecked((ulong)(((bool)v.Value) ? 0 : 1)));
             case TypeCode.String:
-                return String(new VarUInt<ParseContext>()).Then(v => new ParsedValue { Definition = p, Value = v });
+                return String(new VarUInt<ParseContext>()).Then(v => new ParsedValue { Definition = p, Value = v }, v => (string)v.Value);
             case TypeCode.Bytes:
-                return Buffer(new VarUInt<ParseContext>()).Then(v => new ParsedValue { Definition = p, Value = v });
+                return Buffer(new VarUInt<ParseContext>()).Then(v => new ParsedValue { Definition = p, Value = v }, v => (byte[])v.Value);
             case TypeCode.Map:
 
             case TypeCode.Declaration:
                 if (p.Declaration is Enum<ulong>)
-                    return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v });
-                return Sub(new VarUInt<ParseContext>(), parsers[p.Type]).Then(v => new ParsedValue { Definition = p, MessageValue = v });
+                    return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = p, Value = v }, v => (ulong)v.Value);
+                return Sub(new VarUInt<ParseContext>(), parsers[p.Type]).Then(v => new ParsedValue { Definition = p, MessageValue = v }, v => v.MessageValue);
             default:
                 throw new NotSupportedException();
         }
@@ -84,7 +85,7 @@ public class Protocol
                     switch (wireType)
                     {
                         case 0:
-                            return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = m.Properties.First(p => p.Index == propertyIndex), Value = v });
+                            return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = m.Properties.First(p => p.Index == propertyIndex), Value = v }, v => (ulong)v.Value);
                         case 2:
                         case 1:
                         case 5:
@@ -95,7 +96,9 @@ public class Protocol
                     return m.Properties.Where(p => p.Index == propertyIndex).Select(p => TypeParser(p, parsers)
                         // .Then(x => Console.WriteLine("successfully parsed property " + p.Name))
                         .ElseError("Failed to parse property " + p.Name)).First();
-                }))
+                }
+                , v => v.Definition.Index << 3 | v.Definition.WireType
+                ))
                 // m.Properties.Where(p => p.Required).Select(p => PropertyParser(p, parsers)).ToArray())
                 // .And(AllOf(true, m.Properties.Where(p => p.Repeated).Select(p => ZeroOrMany(PropertyParser(p, parsers)).Then(values => new ParsedValue
                 //  {
@@ -104,7 +107,7 @@ public class Protocol
                 //      MessageValues = values.Select(v => v.MessageValue).ToArray()
                 //  })).ToArray()))
                 // .And(AllOf(true, m.Properties.Where(p => p.Optional).Select(p => ZeroOrOne(PropertyParser(p, parsers))).ToArray()))
-                .Then(t => new ParsedMessage { Definition = m, Values = t })
+                .Then(t => new ParsedMessage { Definition = m, Values = t }, v => v.Values)
                 // .Then(c => System.Console.WriteLine($"read {m.Name} message"))
                 ;
             else
@@ -117,7 +120,7 @@ public class Protocol
                     switch (wireType)
                     {
                         case 0:
-                            return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = m.OneOf.Possibilities.First(p => p.Index == propertyIndex), Value = v });
+                            return new VarUInt<ParseContext>().Then(v => new ParsedValue { Definition = m.OneOf.Possibilities.First(p => p.Index == propertyIndex), Value = v }, v => (ulong)v.Value);
                         case 2:
                         case 1:
                         case 5:
@@ -128,8 +131,10 @@ public class Protocol
                     return m.OneOf.Possibilities.Where(p => p.Index == propertyIndex).Select(p => TypeParser(p, parsers)
                     // .Then(x => Console.WriteLine("successfully parsed property " + p.Name))
                     .ElseError("Failed to parse property " + p.Name)).First();
-                })
-                .Then(v => new ParsedMessage { Definition = m, Values = new() { v } })
+                }
+                , v => v.Definition.Index << 3 | v.Definition.WireType
+                )
+                .Then(v => new ParsedMessage { Definition = m, Values = new() { v } }, v => v.Values[0])
                 // .Then(c => System.Console.WriteLine($"read {m.Name} oneof message"))
                 ;
 

@@ -161,7 +161,7 @@ namespace Parlot.Fluent
 
                 if (processedParsers.Count == length)
                 {
-                    System.Console.WriteLine("end of allof");
+                    // System.Console.WriteLine("end of allof");
                     result.Set(start.Offset, context.Scanner.Cursor.Offset, results);
                     return true;
                 }
